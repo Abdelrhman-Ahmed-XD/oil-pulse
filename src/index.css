@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Dark mode background ── */
+html.dark body {
+    background-color: #0c0a09;
+}
+
+/* ── Make ALL borders visible in light mode ── */
+*, *::before, *::after {
+    --tw-border-opacity: 1;
+}
+
+/* Default border color slightly darker than Tailwind's default */
+.border { border-color: #d1d5db; }
+.border-gray-100 { border-color: #e5e7eb !important; }
+.border-gray-200 { border-color: #d1d5db !important; }
+
+/* Inputs and selects — always show border */
+input, select, textarea {
+    border-color: #d1d5db !important;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: #f59e0b !important;
+    outline: none;
+}
+
+/* Cards / white boxes — add subtle shadow in light mode */
+html:not(.dark) .bg-white {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Article image style ── */
+.article-img {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+html.dark .article-img {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* ── SVG icons — never rounded ── */
+svg {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.icon-wrap svg,
+.icon-wrap img {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* ── Admin dashboard ── */
+html:not(.dark) .bg-gray-50 {
+    background-color: #f9fafb;
+}
+
+/* Table borders */
+html:not(.dark) table td,
+html:not(.dark) table th {
+    border-color: #e5e7eb;
+}
