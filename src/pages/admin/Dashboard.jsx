@@ -13,7 +13,7 @@ import Analytics from "./Analytics"
 export default function Dashboard() {
     const navigate = useNavigate()
     const [user, setUser] = useState(null)
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [mobileOpen, setMobileOpen] = useState(false)
 
     useEffect(() => {
         const stored = localStorage.getItem("oilpulse_user")
@@ -24,43 +24,55 @@ export default function Dashboard() {
     if (!user) return null
 
     return (
-        <div className="flex min-h-screen bg-gray-100" dir="rtl">
+        <div className="min-h-screen bg-gray-100 flex" dir="rtl">
 
-            {/* ── Mobile overlay ── */}
+            {/* ── Desktop Sidebar — always visible, static in flow ── */}
+            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:shrink-0">
+                <div className="sticky top-0 h-screen overflow-y-auto">
+                    <Sidebar user={user} />
+                </div>
+            </div>
+
+            {/* ── Mobile Sidebar Drawer ── */}
             <AnimatePresence>
-                {sidebarOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
+                {mobileOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            key="backdrop"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                            onClick={() => setMobileOpen(false)}
+                        />
+                        {/* Drawer */}
+                        <motion.div
+                            key="drawer"
+                            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="fixed top-0 right-0 h-full z-50 lg:hidden">
+                            <Sidebar user={user} onClose={() => setMobileOpen(false)} />
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
 
-            {/* ── Sidebar — fixed on desktop, drawer on mobile ── */}
-            <div className={`
-        fixed top-0 right-0 h-full z-50 transition-transform duration-300 lg:static lg:translate-x-0
-        ${sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
-      `}>
-                <Sidebar user={user} onClose={() => setSidebarOpen(false)} />
-            </div>
+            {/* ── Main Content ── */}
+            <div className="flex-1 min-w-0 flex flex-col">
 
-            {/* ── Main content ── */}
-            <main className="flex-1 min-w-0 overflow-y-auto">
                 {/* Mobile topbar */}
-                <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-black text-stone-900">
+                <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <span className="text-base font-black text-stone-900">
             نفط <span className="text-amber-500">وطاقة</span>
           </span>
-                    <button onClick={() => setSidebarOpen(true)}
-                            className="flex flex-col gap-1 p-1">
-                        <span className="block w-5 h-0.5 bg-stone-800 rounded-full"></span>
-                        <span className="block w-5 h-0.5 bg-stone-800 rounded-full"></span>
-                        <span className="block w-5 h-0.5 bg-stone-800 rounded-full"></span>
+                    <button onClick={() => setMobileOpen(true)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                        <svg className="w-5 h-5 text-stone-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
                     </button>
                 </div>
 
-                <div className="p-4 sm:p-6 lg:p-8">
+                {/* Page content */}
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
                     <Routes>
                         <Route index element={<Analytics user={user} />} />
                         <Route path="articles" element={<ArticlesList user={user} />} />
@@ -75,8 +87,9 @@ export default function Dashboard() {
                             </>
                         )}
                     </Routes>
-                </div>
-            </main>
+                </main>
+            </div>
+
         </div>
     )
 }
