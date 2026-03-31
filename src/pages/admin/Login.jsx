@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { OilDropIcon } from "../../components/CategoryIcons"
 import { getArticles } from "../../data/articles"
+import { useToast } from "../../components/ToastContext"
 
 export default function Login() {
     const navigate = useNavigate()
+    const toast = useToast()
     const [mode, setMode] = useState("login")
     const [form, setForm] = useState({ identity: "", password: "", remember: false })
     const [forgotIdentity, setForgotIdentity] = useState("")
-    const [error, setError] = useState("")
     const [loading, setLoading] = useState(false)
     const [forgotSent, setForgotSent] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
@@ -24,43 +25,60 @@ export default function Login() {
         if (remembered) setForm((prev) => ({ ...prev, identity: remembered, remember: true }))
     }, [])
 
-    const USERS = [
+    // ── Static users from .env ───────────────────────────────────
+    const ENV_USERS = [
         { username: import.meta.env.VITE_ADMIN_USER, email: import.meta.env.VITE_ADMIN_EMAIL || "admin@oilpulse.com", password: import.meta.env.VITE_ADMIN_PASS, role: "admin" },
         { username: import.meta.env.VITE_EDITOR1_USER, email: import.meta.env.VITE_EDITOR1_EMAIL || "editor1@oilpulse.com", password: import.meta.env.VITE_EDITOR1_PASS, role: "editor" },
         { username: import.meta.env.VITE_EDITOR2_USER, email: import.meta.env.VITE_EDITOR2_EMAIL || "editor2@oilpulse.com", password: import.meta.env.VITE_EDITOR2_PASS, role: "editor" },
     ]
 
+    // ── Merges .env users + dynamic editors created in EditorsList ──
+    const getAllUsers = () => {
+        const dynamicEditors = JSON.parse(localStorage.getItem("oilpulse_editors") || "[]")
+            .map((e) => ({ ...e, role: "editor" }))
+        const envUsernames = ENV_USERS.map((u) => u.username)
+        const extraEditors = dynamicEditors.filter((e) => !envUsernames.includes(e.username))
+        return [...ENV_USERS, ...extraEditors]
+    }
+
     const handleLogin = () => {
         if (!form.identity.trim() || !form.password.trim()) {
-            setError("يرجى إدخال اسم المستخدم وكلمة المرور")
+            toast.warning("يرجى إدخال اسم المستخدم وكلمة المرور")
             return
         }
         setLoading(true)
-        setError("")
         setTimeout(() => {
+            const USERS = getAllUsers()
             const user = USERS.find(
                 (u) => (u.username === form.identity || u.email === form.identity) && u.password === form.password
             )
             if (user) {
-                // Handle remember me
                 if (form.remember) {
                     localStorage.setItem("oilpulse_remember", form.identity)
                 } else {
                     localStorage.removeItem("oilpulse_remember")
                 }
                 localStorage.setItem("oilpulse_user", JSON.stringify(user))
+                toast.success(`مرحباً بك، ${user.username}!`)
                 navigate("/admin/dashboard")
             } else {
-                setError("بيانات الدخول غير صحيحة")
+                toast.error("بيانات الدخول غير صحيحة")
                 setLoading(false)
             }
         }, 600)
     }
 
     const handleForgot = () => {
-        if (!forgotIdentity.trim()) { setError("يرجى إدخال اسم المستخدم أو البريد الإلكتروني"); return }
-        setLoading(true); setError("")
-        setTimeout(() => { setLoading(false); setForgotSent(true) }, 800)
+        if (!forgotIdentity.trim()) {
+            toast.warning("يرجى إدخال اسم المستخدم أو البريد الإلكتروني")
+            return
+        }
+        setLoading(true)
+        setTimeout(() => {
+            setLoading(false);
+            setForgotSent(true)
+            toast.info("تم إرسال تعليمات الاستعادة")
+        }, 800)
     }
 
     return (
@@ -133,7 +151,7 @@ export default function Login() {
                                             اسم المستخدم أو البريد الإلكتروني
                                         </label>
                                         <input type="text" value={form.identity}
-                                               onChange={(e) => { setForm({ ...form, identity: e.target.value }); setError("") }}
+                                               onChange={(e) => setForm({ ...form, identity: e.target.value }) }
                                                className="w-full bg-stone-900 border border-stone-700 text-white px-4 py-3 text-sm outline-none focus:border-amber-400 transition-colors rounded-lg placeholder:text-gray-600"
                                                placeholder="أدخل اسم المستخدم أو البريد الإلكتروني" />
                                     </div>
@@ -142,7 +160,7 @@ export default function Login() {
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
                                             <label className="text-xs font-bold text-gray-400 tracking-widest">كلمة المرور</label>
-                                            <button onClick={() => { setMode("forgot"); setError("") }}
+                                            <button onClick={() => setMode("forgot") }
                                                     className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
                                                 نسيت كلمة المرور؟
                                             </button>
@@ -151,7 +169,7 @@ export default function Login() {
                                             <input
                                                 type={showPassword ? "text" : "password"}
                                                 value={form.password}
-                                                onChange={(e) => { setForm({ ...form, password: e.target.value }); setError("") }}
+                                                onChange={(e) => setForm({ ...form, password: e.target.value }) }
                                                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                                                 className="w-full bg-stone-900 border border-stone-700 text-white px-4 py-3 text-sm outline-none focus:border-amber-400 transition-colors rounded-lg placeholder:text-gray-600 pl-12"
                                                 placeholder="أدخل كلمة المرور"
@@ -162,12 +180,10 @@ export default function Login() {
                                                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-amber-400 transition-colors"
                                             >
                                                 {showPassword ? (
-                                                    // Eye-off icon
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                                     </svg>
                                                 ) : (
-                                                    // Eye icon
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -194,13 +210,6 @@ export default function Login() {
                                         <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">تذكرني</span>
                                     </label>
 
-                                    {error && (
-                                        <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                                                  className="text-red-400 text-xs text-center bg-red-950 border border-red-900 px-3 py-2 rounded-lg">
-                                            {error}
-                                        </motion.p>
-                                    )}
-
                                     <button onClick={handleLogin} disabled={loading}
                                             className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold py-3.5 text-sm tracking-widest transition-colors mt-2 rounded-lg">
                                         {loading ? (
@@ -224,7 +233,7 @@ export default function Login() {
                             <motion.div key="forgot"
                                         initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
-                                <button onClick={() => { setMode("login"); setError(""); setForgotSent(false) }}
+                                <button onClick={() => { setMode("login"); setForgotSent(false) }}
                                         className="flex items-center gap-2 text-gray-500 hover:text-amber-400 transition-colors text-sm mb-6">
                                     → العودة لتسجيل الدخول
                                 </button>
@@ -245,13 +254,10 @@ export default function Login() {
                                 ) : (
                                     <div className="space-y-4">
                                         <input type="text" value={forgotIdentity}
-                                               onChange={(e) => { setForgotIdentity(e.target.value); setError("") }}
+                                               onChange={(e) => setForgotIdentity(e.target.value) }
                                                onKeyDown={(e) => e.key === "Enter" && handleForgot()}
                                                className="w-full bg-stone-900 border border-stone-700 text-white px-4 py-3 text-sm outline-none focus:border-amber-400 transition-colors rounded-lg placeholder:text-gray-600"
                                                placeholder="أدخل اسم المستخدم أو البريد" />
-                                        {error && (
-                                            <p className="text-red-400 text-xs bg-red-950 border border-red-900 px-3 py-2 rounded-lg">{error}</p>
-                                        )}
                                         <button onClick={handleForgot} disabled={loading}
                                                 className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold py-3.5 text-sm tracking-widest rounded-lg transition-colors">
                                             {loading ? "جارٍ الإرسال..." : "إرسال تعليمات الاستعادة"}

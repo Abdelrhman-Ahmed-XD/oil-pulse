@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom"
-import { motion, useInView } from "framer-motion"
-import { useRef } from "react"
-import { getArticles } from "../data/articles"
+import {useNavigate} from "react-router-dom"
+import {motion, useInView} from "framer-motion"
+import {useRef} from "react"
+import {getArticles} from "../data/articles"
 import SmartImage from "../components/SmartImage"
+import {useLanguage, useTranslatedArticles} from "../components/LanguageContext"
 
 const categoryColors = {
     "أوبك+": "bg-purple-100 text-purple-700",
@@ -16,19 +17,19 @@ const categoryColors = {
     "تقارير": "bg-purple-100 text-purple-700",
 }
 
-const gridContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
+const gridContainer = {hidden: {}, visible: {transition: {staggerChildren: 0.12}}}
 const cardVariant = {
-    hidden: { opacity: 0, y: 40, scale: 0.97 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    hidden: {opacity: 0, y: 40, scale: 0.97},
+    visible: {opacity: 1, y: 0, scale: 1, transition: {duration: 0.6, ease: [0.22, 1, 0.36, 1]}}
 }
 const fadeUp = {
-    hidden: { opacity: 0, y: 28 },
-    visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 } })
+    hidden: {opacity: 0, y: 28},
+    visible: (i = 0) => ({opacity: 1, y: 0, transition: {duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: i * 0.08}})
 }
 
-function AnimatedCard({ children, i = 0, className = "" }) {
+function AnimatedCard({children, i = 0, className = ""}) {
     const ref = useRef(null)
-    const isInView = useInView(ref, { once: true, amount: 0.15 })
+    const isInView = useInView(ref, {once: true, amount: 0.15})
     return (
         <motion.div ref={ref} className={className} initial="hidden"
                     animate={isInView ? "visible" : "hidden"} custom={i} variants={fadeUp}>
@@ -37,9 +38,9 @@ function AnimatedCard({ children, i = 0, className = "" }) {
     )
 }
 
-function StaggerGrid({ children, className = "" }) {
+function StaggerGrid({children, className = ""}) {
     const ref = useRef(null)
-    const isInView = useInView(ref, { once: true, amount: 0.1 })
+    const isInView = useInView(ref, {once: true, amount: 0.1})
     return (
         <motion.div ref={ref} className={className} variants={gridContainer}
                     initial="hidden" animate={isInView ? "visible" : "hidden"}>
@@ -65,22 +66,29 @@ function getSidebarArticles(allArticles, featuredId) {
 
 export default function Home() {
     const navigate = useNavigate()
-    const allArticles = getArticles()
+    const {lang, t} = useLanguage()
+    const isRtl = lang === "ar"
+
+    const rawArticles = getArticles()
+    // isTranslating is always false now — content shows immediately
+    const {translatedArticles: allArticles} = useTranslatedArticles(rawArticles)
+
     const featured = allArticles.find((a) => a.featured) || allArticles[0] || null
     const rest = featured ? allArticles.filter((a) => a.id !== featured.id) : []
     const sidebarArticles = featured ? getSidebarArticles(allArticles, featured.id) : []
 
+    // No more loading spinner — show empty state or content immediately
     if (!featured) {
         return (
-            <main className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-400" dir="rtl">
+            <main className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-400" dir={isRtl ? "rtl" : "ltr"}>
                 <p className="text-5xl mb-4">📭</p>
-                <p className="text-lg font-bold">لا توجد أخبار منشورة حتى الآن</p>
+                <p className="text-lg font-bold">{t("no_news_yet")}</p>
             </main>
         )
     }
 
     return (
-        <main className="max-w-7xl mx-auto px-4 py-10" dir="rtl">
+        <main className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* HERO */}
             <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-16">
@@ -88,11 +96,11 @@ export default function Home() {
                     <div onClick={() => navigate(`/article/${featured.id}`)}>
                         <div className="overflow-hidden mb-5 rounded-xl shadow-md">
                             <SmartImage src={featured.image} alt={featured.title}
-                                        className="w-full h-96 object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        className="w-full h-96 object-cover group-hover:scale-105 transition-transform duration-500"/>
                         </div>
                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${categoryColors[featured.category] || "bg-gray-100 text-gray-700"}`}>
-              {featured.category}
-            </span>
+                            {t(featured.category)}
+                        </span>
                         <h1 className="text-3xl font-black text-stone-900 dark:text-white mt-3 mb-3 leading-snug group-hover:text-amber-600 transition-colors">
                             {featured.title}
                         </h1>
@@ -104,9 +112,9 @@ export default function Home() {
                 </AnimatedCard>
 
                 {/* Sidebar */}
-                <div className="lg:col-span-2 border-r border-gray-100 dark:border-stone-800 pr-6">
+                <div className={`lg:col-span-2 border-gray-100 dark:border-stone-800 ${isRtl ? "border-r pr-6" : "border-l pl-6"}`}>
                     <div className="flex items-center gap-3 mb-4">
-                        <span className="text-sm font-black tracking-widest text-stone-900 dark:text-white">أبرز الأخبار</span>
+                        <span className="text-sm font-black tracking-widest text-stone-900 dark:text-white">{t("top_news")}</span>
                         <div className="flex-1 h-px bg-gray-200 dark:bg-stone-700"></div>
                     </div>
                     <div className="flex flex-col">
@@ -116,13 +124,13 @@ export default function Home() {
                                      onClick={() => navigate(`/article/${article.id}`)}>
                                     <div className="overflow-hidden shrink-0 rounded-lg shadow-sm w-28 h-20">
                                         <SmartImage src={article.image} alt={article.title}
-                                                    className="w-28 h-20 object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    className="w-28 h-20 object-cover group-hover:scale-105 transition-transform duration-500"/>
                                     </div>
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
-                        {article.category}
-                      </span>
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
+                                                {t(article.category)}
+                                            </span>
                                             <h3 className="text-sm font-bold text-stone-800 dark:text-gray-200 mt-2 leading-snug group-hover:text-amber-600 transition-colors line-clamp-2">
                                                 {article.title}
                                             </h3>
@@ -139,27 +147,27 @@ export default function Home() {
             {/* DIVIDER */}
             <AnimatedCard>
                 <div className="flex items-center gap-4 mb-8">
-                    <span className="text-lg font-black tracking-widest text-stone-900 dark:text-white">آخر الأخبار</span>
+                    <span className="text-lg font-black tracking-widest text-stone-900 dark:text-white">{t("latest_news_home")}</span>
                     <div className="flex-1 h-px bg-gray-200 dark:bg-stone-700"></div>
                 </div>
             </AnimatedCard>
 
             {/* NEWS GRID */}
             {rest.length === 0 ? (
-                <div className="text-center py-10 text-gray-400"><p>لا توجد أخبار إضافية حتى الآن</p></div>
+                <div className="text-center py-10 text-gray-400"><p>{t("no_more_news")}</p></div>
             ) : (
                 <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {rest.map((article) => (
                         <motion.div key={article.id} className="cursor-pointer group" variants={cardVariant}
                                     onClick={() => navigate(`/article/${article.id}`)}
-                                    whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                                    whileHover={{y: -4, transition: {duration: 0.2}}}>
                             <div className="overflow-hidden mb-4 rounded-xl shadow-md">
                                 <SmartImage src={article.image} alt={article.title}
-                                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"/>
                             </div>
                             <span className={`text-xs font-bold px-3 py-1 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
-                {article.category}
-              </span>
+                                {t(article.category)}
+                            </span>
                             <h2 className="text-base font-bold text-stone-900 dark:text-white mt-3 mb-2 leading-snug group-hover:text-amber-600 transition-colors">
                                 {article.title}
                             </h2>

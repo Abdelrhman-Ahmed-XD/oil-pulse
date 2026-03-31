@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
+import { useToast } from "../../components/ToastContext"
 
 const fadeUp = {
     hidden: { opacity: 0, y: 20 },
@@ -58,6 +59,7 @@ function PublisherBadge({ article }) {
 
 export default function Analytics({ user }) {
     const navigate = useNavigate()
+    const toast = useToast()
     const allArticles = JSON.parse(localStorage.getItem("oilpulse_articles") || "[]")
     const viewsData = JSON.parse(localStorage.getItem("oilpulse_views") || "{}")
 
@@ -67,13 +69,13 @@ export default function Analytics({ user }) {
 
     const articlesWithViews = useMemo(() =>
             myArticles.map((a) => ({ ...a, views: viewsData[a.id] || 0 })),
-        [myArticles.length]
+        [myArticles.length, JSON.stringify(viewsData)]
     )
 
     const totalViews = articlesWithViews.reduce((sum, a) => sum + a.views, 0)
     const avgViews = myArticles.length > 0 ? Math.round(totalViews / myArticles.length) : 0
 
-    const allComments = useMemo(() => getAllComments(myArticles), [myArticles.length])
+    const allComments = useMemo(() => getAllComments(myArticles), [myArticles.length, myArticles.map(a=>a.id).join()])
     const [comments, setComments] = useState(allComments)
 
     const deleteComment = (articleId, commentId) => {
@@ -82,6 +84,7 @@ export default function Analytics({ user }) {
         const existing = JSON.parse(localStorage.getItem(key) || "[]")
         localStorage.setItem(key, JSON.stringify(existing.filter((c) => c.id !== commentId)))
         setComments((prev) => prev.filter((c) => !(c.id === commentId && c.articleId === articleId)))
+        toast.success("تم حذف التعليق")
     }
 
     const categoryMap = {}

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { useToast } from "../../components/ToastContext"
 
-// ── Retroactively update ALL articles with the new display name ──────────
 function updateAllArticlesAuthor(newDisplayName) {
     const articles = JSON.parse(localStorage.getItem("oilpulse_articles") || "[]")
     if (articles.length === 0) return
@@ -10,6 +10,7 @@ function updateAllArticlesAuthor(newDisplayName) {
 }
 
 export default function AdminSettings({ user, setUser }) {
+    const toast = useToast()
     const [profile, setProfile] = useState(() => {
         const stored = localStorage.getItem("oilpulse_admin_profile")
         return stored ? JSON.parse(stored) : {
@@ -20,19 +21,15 @@ export default function AdminSettings({ user, setUser }) {
     })
 
     const [passwords, setPasswords] = useState({ current: "", newPass: "", confirm: "" })
-    const [profileSaved, setProfileSaved] = useState(false)
-    const [profileError, setProfileError] = useState("")
-    const [pwSaved, setPwSaved] = useState(false)
-    const [pwError, setPwError] = useState("")
-    const [articlesUpdated, setArticlesUpdated] = useState(0)
 
     const handleSaveProfile = () => {
-        if (!profile.displayName.trim()) return setProfileError("الاسم الظاهر مطلوب")
+        if (!profile.displayName.trim()) {
+            toast.warning("الاسم الظاهر مطلوب")
+            return
+        }
 
-        // 1. Save admin profile
         localStorage.setItem("oilpulse_admin_profile", JSON.stringify(profile))
 
-        // 2. Update active session
         const currentUser = JSON.parse(localStorage.getItem("oilpulse_user") || "{}")
         localStorage.setItem("oilpulse_user", JSON.stringify({
             ...currentUser,
@@ -40,26 +37,29 @@ export default function AdminSettings({ user, setUser }) {
             displayName: profile.displayName,
         }))
 
-        // 3. RETROACTIVELY update ALL existing articles — every article shows the new name
         const articles = JSON.parse(localStorage.getItem("oilpulse_articles") || "[]")
         updateAllArticlesAuthor(profile.displayName.trim())
-        setArticlesUpdated(articles.length)
 
-        setProfileError("")
-        setProfileSaved(true)
-        setTimeout(() => { setProfileSaved(false); setArticlesUpdated(0) }, 3000)
+        toast.success(`تم الحفظ بنجاح — تم تحديث ${articles.length} مقال تلقائياً`)
     }
 
     const handleChangePassword = () => {
-        setPwError("")
         const adminPass = import.meta.env.VITE_ADMIN_PASS
-        if (passwords.current !== adminPass) return setPwError("كلمة المرور الحالية غير صحيحة")
-        if (passwords.newPass.length < 6) return setPwError("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل")
-        if (passwords.newPass !== passwords.confirm) return setPwError("كلمة المرور الجديدة غير متطابقة")
-        setPwError("")
-        setPwSaved(true)
+        if (passwords.current !== adminPass) {
+            toast.error("كلمة المرور الحالية غير صحيحة")
+            return
+        }
+        if (passwords.newPass.length < 6) {
+            toast.warning("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل")
+            return
+        }
+        if (passwords.newPass !== passwords.confirm) {
+            toast.error("كلمة المرور الجديدة غير متطابقة")
+            return
+        }
+
+        toast.success("تم تغيير كلمة المرور بنجاح")
         setPasswords({ current: "", newPass: "", confirm: "" })
-        setTimeout(() => setPwSaved(false), 3000)
     }
 
     const inputCls = "w-full border border-gray-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-stone-500 px-4 py-2.5 text-sm outline-none focus:border-amber-400 rounded-lg"
@@ -71,7 +71,6 @@ export default function AdminSettings({ user, setUser }) {
                 <p className="text-sm text-gray-400 mt-1">إعدادات الملف الشخصي وكلمة المرور</p>
             </motion.div>
 
-            {/* ── Profile Settings ── */}
             <motion.div
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                 className="bg-white dark:bg-stone-800 p-6 rounded-xl border border-gray-200 dark:border-stone-700 mb-6">
@@ -114,33 +113,16 @@ export default function AdminSettings({ user, setUser }) {
                     </div>
                 </div>
 
-                {profileError && (
-                    <p className="text-xs text-red-500 dark:text-red-400 mb-3">{profileError}</p>
-                )}
-
-                {/* Success message — shows how many articles were updated */}
-                {profileSaved && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 text-sm rounded-lg mb-3">
-                        ✓ تم الحفظ بنجاح
-                        {articlesUpdated > 0 && (
-                            <span className="mr-2 font-bold">
-                                — تم تحديث {articlesUpdated} مقال تلقائياً بالاسم الجديد
-                            </span>
-                        )}
-                    </div>
-                )}
-
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleSaveProfile}
                         className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 text-sm rounded-lg transition-colors"
                     >
-                        {profileSaved ? "✓ تم الحفظ" : "حفظ التغييرات"}
+                        حفظ التغييرات
                     </button>
                 </div>
             </motion.div>
 
-            {/* ── Password Change ── */}
             <motion.div
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className="bg-white dark:bg-stone-800 p-6 rounded-xl border border-gray-200 dark:border-stone-700 mb-6">
@@ -171,15 +153,6 @@ export default function AdminSettings({ user, setUser }) {
                     </div>
                 </div>
 
-                {pwError && (
-                    <p className="text-xs text-red-500 dark:text-red-400 mb-3">{pwError}</p>
-                )}
-                {pwSaved && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 text-sm rounded-lg mb-3">
-                        ✓ تم تغيير كلمة المرور بنجاح
-                    </div>
-                )}
-
                 <button
                     onClick={handleChangePassword}
                     disabled={!passwords.current || !passwords.newPass || !passwords.confirm}
@@ -189,7 +162,6 @@ export default function AdminSettings({ user, setUser }) {
                 </button>
             </motion.div>
 
-            {/* ── Account Info ── */}
             <motion.div
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                 className="bg-gray-50 dark:bg-stone-900 p-5 rounded-xl border border-gray-200 dark:border-stone-700">

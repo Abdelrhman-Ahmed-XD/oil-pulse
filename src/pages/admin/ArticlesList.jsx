@@ -1,9 +1,12 @@
+// src/pages/admin/ArticlesList.jsx
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
+import { useToast } from "../../components/ToastContext"
 
 export default function ArticlesList({ user }) {
     const navigate = useNavigate()
+    const toast = useToast()
     const [search, setSearch] = useState("")
     const [confirmDelete, setConfirmDelete] = useState(null)
 
@@ -21,13 +24,15 @@ export default function ArticlesList({ user }) {
         const updated = allArticles.filter((a) => a.id !== id)
         localStorage.setItem("oilpulse_articles", JSON.stringify(updated))
         setConfirmDelete(null)
-        window.location.reload()
+        toast.success("تم حذف الخبر بنجاح")
+        setTimeout(() => window.location.reload(), 1000)
     }
 
     const toggleFeatured = (id) => {
         const updated = allArticles.map((a) => ({ ...a, featured: a.id === id }))
         localStorage.setItem("oilpulse_articles", JSON.stringify(updated))
-        window.location.reload()
+        toast.info("تم تحديث حالة التمييز")
+        setTimeout(() => window.location.reload(), 1000)
     }
 
     const categoryColors = {
@@ -43,7 +48,6 @@ export default function ArticlesList({ user }) {
 
     return (
         <div dir="rtl">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">الأخبار المنشورة</h1>
@@ -55,7 +59,6 @@ export default function ArticlesList({ user }) {
                 </button>
             </div>
 
-            {/* Search */}
             <div className="mb-5">
                 <input
                     type="text" value={search} onChange={(e) => setSearch(e.target.value)}
@@ -71,7 +74,6 @@ export default function ArticlesList({ user }) {
                 </div>
             ) : (
                 <>
-                    {/* ── Desktop Table ── */}
                     <div className="hidden lg:block rounded-xl border border-gray-200 dark:border-stone-700 overflow-hidden">
                         <table className="w-full text-sm">
                             <thead>
@@ -141,7 +143,6 @@ export default function ArticlesList({ user }) {
                         </table>
                     </div>
 
-                    {/* ── Mobile Cards ── */}
                     <div className="lg:hidden space-y-3">
                         {filtered.map((article, i) => (
                             <motion.div key={article.id}
@@ -195,7 +196,6 @@ export default function ArticlesList({ user }) {
                 </>
             )}
 
-            {/* ── Delete confirm modal ── */}
             {confirmDelete && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                     <motion.div

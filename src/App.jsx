@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { ToastProvider } from "./components/ToastContext"
+import { LanguageProvider } from "./components/LanguageContext" // <-- ADDED
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import ScrollToTop from "./components/ScrollToTop"
@@ -32,7 +34,7 @@ function PublicLayout() {
     const showBar = !!user && barVisible
 
     return (
-        <div dir="rtl">
+        <div>
             {/* AdminBar — only when logged in */}
             {showBar && (
                 <AdminBar
@@ -58,17 +60,21 @@ function PublicLayout() {
 
 function App() {
     return (
-        <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-                {/* Admin Routes — no Header/Footer/AdminBar */}
-                <Route path="/admin" element={<Login />} />
-                <Route path="/admin/dashboard/*" element={<Dashboard />} />
+        <LanguageProvider>
+            <ToastProvider>
+                <BrowserRouter>
+                    <ScrollToTop />
+                    <Routes>
+                        {/* Admin Routes — no Header/Footer/AdminBar */}
+                        <Route path="/admin" element={<Login />} />
+                        <Route path="/admin/dashboard/*" element={<Dashboard />} />
 
-                {/* Public Routes — with AdminBar + Header + Footer */}
-                <Route path="/*" element={<PublicLayout />} />
-            </Routes>
-        </BrowserRouter>
+                        {/* Public Routes — with AdminBar + Header + Footer */}
+                        <Route path="/*" element={<PublicLayout />} />
+                    </Routes>
+                </BrowserRouter>
+            </ToastProvider>
+        </LanguageProvider>
     )
 }
 

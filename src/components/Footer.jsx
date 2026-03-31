@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { categoryIcons, OilDropIcon } from "./CategoryIcons"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { useLanguage } from "./LanguageContext"
 
 const defaultCategories = [
     { id: 1, name: "البترول", subcategories: [] },
@@ -29,14 +30,12 @@ function getFooterCategories() {
 
 export default function Footer() {
     const categories = getFooterCategories()
-
-    const bottomLinks = [
-        { label: "سياسة الخصوصية", to: "/privacy" },
-        { label: "تواصل معنا", to: "#" },
-    ]
+    const navigate = useNavigate()
+    const { lang, t } = useLanguage()
+    const isRtl = lang === "ar"
 
     return (
-        <footer className="bg-stone-900 text-white mt-20" dir="rtl">
+        <footer className="bg-stone-900 text-white mt-20" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* ── Top amber accent line ── */}
             <div className="h-1 bg-gradient-to-l from-amber-600 via-amber-400 to-amber-600"></div>
@@ -51,25 +50,24 @@ export default function Footer() {
                                 <OilDropIcon size={44} />
                             </motion.div>
                             <div>
-                <span className="text-2xl font-black tracking-widest text-white group-hover:text-amber-400 transition-colors duration-200">
-                  نفط <span className="text-amber-400">وطاقة</span>
-                </span>
-                                <p className="text-xs text-gray-500 tracking-widest mt-0.5">OIL & ENERGY</p>
+                                <span className="text-2xl font-black tracking-widest text-white group-hover:text-amber-400 transition-colors duration-200">
+                                    {t("oil_and_energy_1")}<span className="text-amber-400">{t("oil_and_energy_2")}</span>
+                                </span>
+                                <p className="text-xs text-gray-500 tracking-widest mt-0.5">{t("oil_energy_sub")}</p>
                             </div>
                         </Link>
 
                         <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-sm">
-                            بوابتكم الإخبارية المتخصصة في قطاع البترول والغاز والطاقة المتجددة.
-                            نقدم أحدث الأخبار والتقارير والتحليلات لأهل القطاع.
+                            {t("about_desc")}
                         </p>
 
                         <div className="flex gap-3">
-                            {["الرئيسية", "أحدث الأخبار"].map((label) => (
-                                <Link key={label} to="/"
-                                      className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10">
-                                    {label}
-                                </Link>
-                            ))}
+                            <Link to="/" className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10">
+                                {t("home")}
+                            </Link>
+                            <Link to="/" className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10">
+                                {t("latest_news")}
+                            </Link>
                         </div>
                     </div>
 
@@ -77,16 +75,20 @@ export default function Footer() {
                     <div>
                         <h4 className="text-xs font-black tracking-widest text-amber-400 mb-5 uppercase flex items-center gap-2">
                             <span className="w-4 h-0.5 bg-amber-400 rounded-full"></span>
-                            التصنيفات
+                            {t("categories")}
                         </h4>
 
                         <ul className="space-y-1">
                             {categories.map((cat) => {
                                 const Icon = categoryIcons[cat.name]
+                                const catSlug = toSlug(cat.name)
                                 return (
                                     <li key={cat.id}>
-                                        <Link to={`/category/${toSlug(cat.name)}`}
-                                              className="flex items-center gap-3 group py-2 px-3 rounded-lg hover:bg-stone-800 transition-all duration-200">
+                                        {/* ── FIX: single <div> instead of <Link> wrapping other <Link>s ── */}
+                                        <div
+                                            onClick={() => navigate(`/category/${catSlug}`)}
+                                            className="flex items-center gap-3 group py-2 px-3 rounded-lg hover:bg-stone-800 transition-all duration-200 cursor-pointer"
+                                        >
                                             {Icon && (
                                                 <motion.div className="w-7 h-7 shrink-0 icon-wrap"
                                                             whileHover={{ scale: 1.2, rotate: 10 }}
@@ -95,26 +97,31 @@ export default function Footer() {
                                                 </motion.div>
                                             )}
                                             <div className="flex-1 min-w-0">
-                        <span className="text-sm text-gray-400 group-hover:text-amber-400 transition-colors duration-200 font-semibold">
-                          {cat.name}
-                        </span>
+                                                <span className="text-sm text-gray-400 group-hover:text-amber-400 transition-colors duration-200 font-semibold">
+                                                    {t(cat.name)}
+                                                </span>
                                                 {cat.subcategories?.length > 0 && (
                                                     <div className="flex flex-wrap gap-x-3 mt-0.5">
                                                         {cat.subcategories.map((sub) => (
-                                                            <Link key={sub}
-                                                                  to={`/category/${sub.replace(/\s+/g, "-").toLowerCase()}`}
-                                                                  onClick={(e) => e.stopPropagation()}
-                                                                  className="text-xs text-gray-600 hover:text-amber-400 transition-colors">
-                                                                · {sub}
-                                                            </Link>
+                                                            // ── FIX: button instead of <Link> to avoid a-in-a ──
+                                                            <button
+                                                                key={sub}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    navigate(`/category/${sub.replace(/\s+/g, "-").toLowerCase()}`)
+                                                                }}
+                                                                className="text-xs text-gray-600 hover:text-amber-400 transition-colors"
+                                                            >
+                                                                · {t(sub)}
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 )}
                                             </div>
                                             <motion.span className="text-gray-600 text-xs opacity-0 group-hover:opacity-100 transition-opacity" initial={false}>
-                                                ←
+                                                {isRtl ? "←" : "→"}
                                             </motion.span>
-                                        </Link>
+                                        </div>
                                     </li>
                                 )
                             })}
@@ -128,10 +135,9 @@ export default function Footer() {
             <div className="border-t border-stone-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
 
-                    {/* Copyright + Developer */}
                     <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
                         <p className="text-xs text-gray-500 text-center sm:text-right">
-                            جميع الحقوق محفوظة © 2026 · نفط وطاقة
+                            {t("all_rights")}
                         </p>
                         <span className="hidden sm:block text-gray-700">·</span>
                         <a
@@ -143,20 +149,20 @@ export default function Footer() {
                             <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                             </svg>
-                            <span>Developed by Abdelrhman Ahmed</span>
+                            <span>{t("developed_by")}</span>
                             <span className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-400">↗</span>
                         </a>
                     </div>
 
-                    {/* Links */}
                     <div className="flex items-center gap-4 sm:gap-6">
-                        {bottomLinks.map(({ label, to }) => (
-                            <Link key={label} to={to}
-                                  className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group">
-                                {label}
-                                <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-amber-400 group-hover:w-full transition-all duration-300"></span>
-                            </Link>
-                        ))}
+                        <Link to="/privacy" className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group">
+                            {t("privacy_policy")}
+                            <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-amber-400 group-hover:w-full transition-all duration-300"></span>
+                        </Link>
+                        <a href="#" className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group">
+                            {t("contact_us")}
+                            <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-amber-400 group-hover:w-full transition-all duration-300"></span>
+                        </a>
                     </div>
 
                 </div>
