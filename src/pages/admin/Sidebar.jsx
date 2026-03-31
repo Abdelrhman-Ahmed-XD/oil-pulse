@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { motion } from "framer-motion"
 
-export default function Sidebar({ user, onClose, dark, onToggleDark }) {
+export default function Sidebar({ user }) {
     const navigate = useNavigate()
     const { pathname } = useLocation()
 
@@ -19,121 +18,52 @@ export default function Sidebar({ user, onClose, dark, onToggleDark }) {
         ...(user.role === "admin" ? [
             { label: "إدارة المحررين", path: "/admin/dashboard/editors", icon: "👥" },
             { label: "إدارة التصنيفات", path: "/admin/dashboard/categories", icon: "🗂️" },
-            { label: "الإعدادات", path: "/admin/dashboard/settings", icon: "⚙️" },
-        ] : [
-            { label: "الإعدادات", path: "/admin/dashboard/settings", icon: "⚙️" },
-        ]),
+        ] : []),
     ]
 
-    const handleNav = (path) => {
-        navigate(path)
-        onClose?.()
-    }
-
     return (
-        <aside
-            className="w-64 bg-stone-900 text-white flex flex-col h-full"
-            dir="rtl"
-        >
-            {/* Header */}
-            <div className="px-5 py-5 border-b border-stone-700 flex items-center justify-between shrink-0">
-                <div>
-                    <span className="text-lg font-black tracking-widest">
-                        نفط <span className="text-amber-400">وطاقة</span>
-                    </span>
-                    <p className="text-xs text-gray-500 mt-0.5">لوحة التحكم</p>
-                </div>
-                {/* X button — mobile only */}
-                {onClose && (
-                    <button onClick={onClose}
-                            className="lg:hidden text-gray-400 hover:text-white p-1 rounded transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+        <aside className="w-64 bg-stone-900 text-white min-h-screen flex flex-col shrink-0" dir="rtl">
+
+            <div className="px-6 py-6 border-b border-stone-700">
+        <span className="text-xl font-black tracking-widest">
+          نفط <span className="text-amber-400">وطاقة</span>
+        </span>
+                <p className="text-xs text-gray-400 mt-1">لوحة التحكم الإدارية</p>
+            </div>
+
+            <div className="px-6 py-4 border-b border-stone-700">
+                <p className="text-xs text-gray-400">مرحباً،</p>
+                <p className="text-sm font-bold text-white">{user.username}</p>
+                <span className="text-xs bg-amber-500 text-black px-2 py-0.5 font-bold mt-1 inline-block rounded">
+          {user.role === "admin" ? "مدير النظام" : "محرر"}
+        </span>
+            </div>
+
+            <nav className="flex-1 px-4 py-4 space-y-1">
+                {navItems.map((item) => (
+                    <button key={item.path} onClick={() => navigate(item.path)}
+                            className={`w-full text-right px-4 py-3 text-sm font-semibold flex items-center gap-3 rounded-lg transition-colors ${
+                                pathname === item.path
+                                    ? "bg-amber-500 text-black"
+                                    : "text-gray-300 hover:bg-stone-800 hover:text-white"
+                            }`}>
+                        <span>{item.icon}</span>
+                        {item.label}
                     </button>
-                )}
-            </div>
-
-            {/* User info */}
-            <div className="px-5 py-4 border-b border-stone-700 shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-black font-black text-sm shrink-0">
-                        {user.username?.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-white truncate">{user.username}</p>
-                        <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 font-bold rounded-full">
-                            {user.role === "admin" ? "مدير النظام" : "محرر"}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Nav */}
-            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.path
-                    return (
-                        <button
-                            key={item.path}
-                            onClick={() => handleNav(item.path)}
-                            className={`w-full text-right px-4 py-2.5 text-sm font-semibold flex items-center gap-3 rounded-xl transition-all ${
-                                isActive
-                                    ? "bg-amber-500 text-black shadow-sm"
-                                    : "text-gray-400 hover:bg-stone-800 hover:text-white"
-                            }`}
-                        >
-                            <span className="text-base shrink-0">{item.icon}</span>
-                            <span className="truncate">{item.label}</span>
-                        </button>
-                    )
-                })}
+                ))}
             </nav>
 
-            {/* Bottom actions */}
-            <div className="px-3 py-4 border-t border-stone-700 space-y-0.5 shrink-0">
-                {/* Dark mode toggle */}
-                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-stone-800 transition-colors">
-                    <div className="flex items-center gap-3">
-                        <span className="text-base">{dark ? "🌙" : "☀️"}</span>
-                        <span className="text-xs text-gray-400">{dark ? "الوضع الداكن" : "الوضع الفاتح"}</span>
-                    </div>
-                    <button
-                        onClick={onToggleDark}
-                        aria-label="تبديل الوضع"
-                        style={{
-                            width: "36px", height: "20px", borderRadius: "10px",
-                            backgroundColor: dark ? "#F59E0B" : "#4b5563",
-                            position: "relative", border: "none", cursor: "pointer",
-                            flexShrink: 0, outline: "none", transition: "background-color 0.3s ease",
-                        }}>
-                        <motion.div
-                            style={{
-                                position: "absolute", top: "2px", width: "16px", height: "16px",
-                                borderRadius: "50%", backgroundColor: "#ffffff",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
-                            }}
-                            animate={{ left: dark ? "18px" : "2px" }}
-                            transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.8 }}
-                        />
-                    </button>
-                </div>
-
-                <button
-                    onClick={() => { navigate("/"); onClose?.() }}
-                    className="w-full text-right px-4 py-2.5 text-xs text-gray-400 hover:text-white flex items-center gap-3 rounded-xl hover:bg-stone-800 transition-colors"
-                >
-                    <span>🌐</span>
-                    <span>عرض الموقع</span>
+            <div className="px-4 py-4 border-t border-stone-700 space-y-1">
+                <button onClick={() => navigate("/")}
+                        className="w-full text-right px-4 py-2 text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-2 rounded-lg hover:bg-stone-800">
+                    🌐 عرض الموقع
                 </button>
-                <button
-                    onClick={handleLogout}
-                    className="w-full text-right px-4 py-2.5 text-xs text-red-400 hover:text-red-300 flex items-center gap-3 rounded-xl hover:bg-stone-800 transition-colors"
-                >
-                    <span>🚪</span>
-                    <span>تسجيل الخروج</span>
+                <button onClick={handleLogout}
+                        className="w-full text-right px-4 py-2 text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 rounded-lg hover:bg-stone-800">
+                    🚪 تسجيل الخروج
                 </button>
             </div>
+
         </aside>
     )
 }
