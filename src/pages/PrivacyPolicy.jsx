@@ -1,5 +1,6 @@
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
+import { useLanguage } from "../components/LanguageContext"
 
 const sections = [
     {
@@ -125,9 +126,11 @@ const fadeUp = {
 
 export default function PrivacyPolicy() {
     const navigate = useNavigate()
+    const { t, lang } = useLanguage()
+    const isRtl = lang === "ar"
 
     return (
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10" dir="rtl">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* Back button */}
             <button onClick={() => navigate(-1)}
@@ -143,10 +146,10 @@ export default function PrivacyPolicy() {
                     🔒 سياسة الخصوصية
                 </div>
                 <h1 className="text-4xl font-black text-stone-900 dark:text-white mb-4">
-                    سياسة الخصوصية
+                    {t("privacy_title")}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto leading-relaxed">
-                    نحن في موقع <span className="text-amber-600 font-bold">نفط وطاقة</span> نلتزم بحماية خصوصيتكم وضمان أمان بياناتكم الشخصية.
+                    {t("privacy_sub")}
                 </p>
                 <div className="mt-4 text-xs text-gray-400">آخر تحديث: مارس 2026</div>
             </motion.div>
@@ -155,7 +158,7 @@ export default function PrivacyPolicy() {
             <motion.div
                 className="bg-amber-50 dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-2xl p-6 mb-10"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                <h2 className="text-sm font-black text-amber-700 dark:text-amber-400 mb-4 tracking-widest">محتويات السياسة</h2>
+                <h2 className="text-sm font-black text-amber-700 dark:text-amber-400 mb-4 tracking-widest">{t("privacy_toc")}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {sections.map((s) => (
                         <a key={s.id} href={`#section-${s.id}`}
@@ -194,9 +197,9 @@ export default function PrivacyPolicy() {
             <motion.div className="mt-10 text-center bg-stone-900 dark:bg-stone-950 text-white rounded-2xl p-8"
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                 <div className="text-3xl mb-3">🔒</div>
-                <h3 className="text-lg font-black mb-2">خصوصيتكم أولويتنا</h3>
+                <h3 className="text-lg font-black mb-2">{t("privacy_priority")}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed max-w-md mx-auto">
-                    إذا كان لديكم أي استفسار حول هذه السياسة، تواصلوا معنا وسنكون سعداء بالإجابة على جميع أسئلتكم.
+                    {t("privacy_footer")}
                 </p>
                 <button onClick={() => navigate(-1)}
                         className="mt-5 bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-2.5 text-sm rounded-lg transition-colors">

@@ -15,6 +15,14 @@ const categoryColors = {
 }
 
 function trackView(id) {
+    // ── One view per article per browser session ──────────────
+    // sessionStorage resets when the tab is closed, so returning
+    // visitors on a new session still count — but rapid re-clicks
+    // or page refreshes on the same article don't inflate the count.
+    const sessionKey = `oilpulse_viewed_${id}`
+    if (sessionStorage.getItem(sessionKey)) return   // already counted this session
+    sessionStorage.setItem(sessionKey, "1")
+
     const views = JSON.parse(localStorage.getItem("oilpulse_views") || "{}")
     views[id] = (views[id] || 0) + 1
     localStorage.setItem("oilpulse_views", JSON.stringify(views))

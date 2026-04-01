@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
+import { useLanguage } from "./LanguageContext"
 
 export default function AdminBar({ user, onClose }) {
     const navigate = useNavigate()
+    const { t, lang } = useLanguage()
 
     if (!user) return null
 
@@ -13,7 +15,7 @@ export default function AdminBar({ user, onClose }) {
             exit={{ y: -40, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="fixed top-0 left-0 right-0 z-[60] h-10 bg-stone-900 text-white flex items-center px-4 gap-3"
-            dir="rtl"
+            dir={lang === "ar" ? "rtl" : "ltr"}
         >
             {/* User info */}
             <div className="flex items-center gap-2 shrink-0">
@@ -26,7 +28,7 @@ export default function AdminBar({ user, onClose }) {
                         ? "bg-amber-500/20 text-amber-400"
                         : "bg-blue-500/20 text-blue-400"
                 }`}>
-                    {user.role === "admin" ? "مدير" : "محرر"}
+                    {user.role === "admin" ? t("role_admin") : t("role_editor")}
                 </span>
             </div>
 
@@ -40,8 +42,7 @@ export default function AdminBar({ user, onClose }) {
                     className="flex items-center gap-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded-lg transition-colors"
                 >
                     <span>+</span>
-                    <span className="hidden sm:block">خبر جديد</span>
-                    <span className="sm:hidden">جديد</span>
+                    <span className="hidden sm:block">{t("new_article")}</span>
                 </button>
 
                 <button
@@ -49,8 +50,7 @@ export default function AdminBar({ user, onClose }) {
                     className="flex items-center gap-1.5 text-xs font-bold border border-stone-600 hover:border-amber-500 hover:text-amber-400 text-stone-300 px-3 py-1 rounded-lg transition-colors"
                 >
                     <span>⚙</span>
-                    <span className="hidden sm:block">لوحة التحكم</span>
-                    <span className="sm:hidden">لوحة</span>
+                    <span className="hidden sm:block">{t("control_panel")}</span>
                 </button>
             </div>
 
