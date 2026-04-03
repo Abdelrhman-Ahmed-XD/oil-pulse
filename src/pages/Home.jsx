@@ -1,35 +1,50 @@
-import {useNavigate} from "react-router-dom"
-import {motion, useInView} from "framer-motion"
-import {useRef} from "react"
-import {getArticles} from "../data/articles"
+import { useNavigate } from "react-router-dom"
+import { motion, useInView } from "framer-motion"
+import { useRef } from "react"
+import { getArticles } from "../data/articles"
 import SmartImage from "../components/SmartImage"
-import {useLanguage, useTranslatedArticles} from "../components/LanguageContext"
+import { getCategoryIcon } from "../utils/categoryIconUtils"
+import { useLanguage, useTranslatedArticles } from "../components/LanguageContext"
 
-const categoryColors = {
-    "أوبك+": "bg-purple-100 text-purple-700",
-    "طاقة متجددة": "bg-green-100 text-green-700",
-    "نفط خام": "bg-amber-100 text-amber-700",
-    "البترول": "bg-amber-100 text-amber-700",
-    "غاز طبيعي": "bg-blue-100 text-blue-700",
-    "الغاز الطبيعي": "bg-blue-100 text-blue-700",
-    "أسواق": "bg-red-100 text-red-700",
-    "الأسواق": "bg-red-100 text-red-700",
-    "تقارير": "bg-purple-100 text-purple-700",
+// Map Arabic category names to English for consistent translation
+const categoryToEnglish = {
+    "الأسواق": "Markets",
+    "أسواق": "Markets",
+    "تقارير": "Reports",
+    "تقرير": "Reports",
+    "البترول": "Petroleum",
+    "نفط خام": "Crude Oil",
+    "الغاز الطبيعي": "Natural Gas",
+    "غاز طبيعي": "Natural Gas",
+    "الطاقة المتجددة": "Renewable Energy",
+    "طاقة متجددة": "Renewable Energy",
+    "أوبك+": "OPEC+",
 }
 
-const gridContainer = {hidden: {}, visible: {transition: {staggerChildren: 0.12}}}
+// Category colors for badges
+const categoryColors = {
+    "Petroleum": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
+    "Crude Oil": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
+    "Natural Gas": "bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300",
+    "Renewable Energy": "bg-green-100 text-green-700 dark:bg-green-400/20 dark:text-green-300",
+    "Markets": "bg-red-100 text-red-700 dark:bg-red-400/20 dark:text-red-300",
+    "Reports": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
+    "OPEC+": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
+}
+
+const gridContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
 const cardVariant = {
-    hidden: {opacity: 0, y: 40, scale: 0.97},
-    visible: {opacity: 1, y: 0, scale: 1, transition: {duration: 0.6, ease: [0.22, 1, 0.36, 1]}}
+    hidden: { opacity: 0, y: 40, scale: 0.97 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
 }
 const fadeUp = {
-    hidden: {opacity: 0, y: 28},
-    visible: (i = 0) => ({opacity: 1, y: 0, transition: {duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: i * 0.08}})
+    hidden: { opacity: 0, y: 28 },
+    visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 } })
 }
 
-function AnimatedCard({children, i = 0, className = ""}) {
+function AnimatedCard({ children, i = 0, className = "" }) {
     const ref = useRef(null)
-    const isInView = useInView(ref, {once: true, amount: 0.15})
+    const isInView = useInView(ref, { once: true, amount: 0.15 })
     return (
         <motion.div ref={ref} className={className} initial="hidden"
                     animate={isInView ? "visible" : "hidden"} custom={i} variants={fadeUp}>
@@ -38,9 +53,9 @@ function AnimatedCard({children, i = 0, className = ""}) {
     )
 }
 
-function StaggerGrid({children, className = ""}) {
+function StaggerGrid({ children, className = "" }) {
     const ref = useRef(null)
-    const isInView = useInView(ref, {once: true, amount: 0.1})
+    const isInView = useInView(ref, { once: true, amount: 0.1 })
     return (
         <motion.div ref={ref} className={className} variants={gridContainer}
                     initial="hidden" animate={isInView ? "visible" : "hidden"}>
@@ -64,20 +79,57 @@ function getSidebarArticles(allArticles, featuredId) {
     return nonFeatured.slice(0, 4)
 }
 
+const formatDate = (dateStr, lang) => {
+    if (!dateStr) return ""
+
+    if (lang === "en") {
+        if (dateStr.includes("January") || dateStr.includes("February") || dateStr.includes("March") ||
+            dateStr.includes("April") || dateStr.includes("May") || dateStr.includes("June") ||
+            dateStr.includes("July") || dateStr.includes("August") || dateStr.includes("September") ||
+            dateStr.includes("October") || dateStr.includes("November") || dateStr.includes("December")) {
+            return dateStr
+        }
+
+        const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+        const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+        let converted = dateStr
+        arabicNumbers.forEach((a, i) => {
+            converted = converted.replace(new RegExp(a, 'g'), englishNumbers[i])
+        })
+
+        const monthMap = {
+            'يناير': 'January', 'فبراير': 'February', 'مارس': 'March',
+            'أبريل': 'April', 'مايو': 'May', 'يونيو': 'June',
+            'يوليو': 'July', 'أغسطس': 'August', 'سبتمبر': 'September',
+            'أكتوبر': 'October', 'نوفمبر': 'November', 'ديسمبر': 'December'
+        }
+
+        const parts = converted.split(' ')
+        if (parts.length === 3) {
+            const day = parts[0]
+            const arabicMonth = parts[1]
+            const year = parts[2]
+            const englishMonth = monthMap[arabicMonth] || arabicMonth
+            return `${englishMonth} ${day}, ${year}`
+        }
+        return converted
+    }
+    return dateStr
+}
+
 export default function Home() {
     const navigate = useNavigate()
-    const {lang, t} = useLanguage()
+    const { lang, t } = useLanguage()
     const isRtl = lang === "ar"
 
     const rawArticles = getArticles()
-    // isTranslating is always false now — content shows immediately
-    const {translatedArticles: allArticles} = useTranslatedArticles(rawArticles)
+    const { translatedArticles: allArticles } = useTranslatedArticles(rawArticles)
 
     const featured = allArticles.find((a) => a.featured) || allArticles[0] || null
     const rest = featured ? allArticles.filter((a) => a.id !== featured.id) : []
     const sidebarArticles = featured ? getSidebarArticles(allArticles, featured.id) : []
 
-    // No more loading spinner — show empty state or content immediately
     if (!featured) {
         return (
             <main className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-400" dir={isRtl ? "rtl" : "ltr"}>
@@ -86,6 +138,54 @@ export default function Home() {
             </main>
         )
     }
+
+    // Get display category name (translated)
+    const getDisplayCategory = (category) => {
+        const englishName = categoryToEnglish[category] || category
+        return t(englishName)
+    }
+
+    // Get category color class
+    const getCategoryColor = (category) => {
+        const englishName = categoryToEnglish[category] || category
+        return categoryColors[englishName] || "bg-gray-100 text-gray-700"
+    }
+
+    // Category Badge with Icon inside
+    const CategoryBadge = ({ category, size = "md" }) => {
+        const Icon = getCategoryIcon(category)
+        const iconSize = size === "lg" ? 18 : size === "sm" ? 12 : 14
+        const padding = size === "lg" ? "px-3 py-1.5" : "px-2 py-0.5"
+        const textSize = size === "lg" ? "text-xs" : "text-[11px]"
+
+        return (
+            <div className={`inline-flex items-center gap-1.5 rounded-full ${getCategoryColor(category)} ${padding} ${textSize} font-bold`}>
+                <motion.div
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                    className="flex items-center"
+                >
+                    <Icon size={iconSize} />
+                </motion.div>
+                <span>{getDisplayCategory(category)}</span>
+            </div>
+        )
+    }
+
+    // Author and Date row with text emojis
+    const AuthorDateRow = ({ author, date }) => (
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-1">
+                <span>✍</span>
+                <span>{author}</span>
+            </div>
+            <span>·</span>
+            <div className="flex items-center gap-1">
+                <span>📅</span>
+                <span>{date}</span>
+            </div>
+        </div>
+    )
 
     return (
         <main className="max-w-7xl mx-auto px-4 py-10" dir={isRtl ? "rtl" : "ltr"}>
@@ -98,16 +198,12 @@ export default function Home() {
                             <SmartImage src={featured.image} alt={featured.title}
                                         className="w-full h-96 object-cover group-hover:scale-105 transition-transform duration-500"/>
                         </div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${categoryColors[featured.category] || "bg-gray-100 text-gray-700"}`}>
-                            {t(featured.category)}
-                        </span>
+                        <CategoryBadge category={featured.category} size="lg" />
                         <h1 className="text-3xl font-black text-stone-900 dark:text-white mt-3 mb-3 leading-snug group-hover:text-amber-600 transition-colors">
                             {featured.title}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 text-base leading-relaxed mb-4">{featured.excerpt}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-100 dark:border-stone-800 pt-4">
-                            <span>✍ {featured.author}</span><span>·</span><span>📅 {featured.date}</span>
-                        </div>
+                        <AuthorDateRow author={featured.author} date={formatDate(featured.date, lang)} />
                     </div>
                 </AnimatedCard>
 
@@ -128,14 +224,12 @@ export default function Home() {
                                     </div>
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
-                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
-                                                {t(article.category)}
-                                            </span>
+                                            <CategoryBadge category={article.category} size="sm" />
                                             <h3 className="text-sm font-bold text-stone-800 dark:text-gray-200 mt-2 leading-snug group-hover:text-amber-600 transition-colors line-clamp-2">
                                                 {article.title}
                                             </h3>
                                         </div>
-                                        <span className="text-xs text-gray-400 mt-2">{article.date}</span>
+                                        <AuthorDateRow author={article.author} date={formatDate(article.date, lang)} />
                                     </div>
                                 </div>
                             </AnimatedCard>
@@ -160,21 +254,17 @@ export default function Home() {
                     {rest.map((article) => (
                         <motion.div key={article.id} className="cursor-pointer group" variants={cardVariant}
                                     onClick={() => navigate(`/article/${article.id}`)}
-                                    whileHover={{y: -4, transition: {duration: 0.2}}}>
+                                    whileHover={{ y: -4, transition: { duration: 0.2 } }}>
                             <div className="overflow-hidden mb-4 rounded-xl shadow-md">
                                 <SmartImage src={article.image} alt={article.title}
                                             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"/>
                             </div>
-                            <span className={`text-xs font-bold px-3 py-1 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
-                                {t(article.category)}
-                            </span>
+                            <CategoryBadge category={article.category} size="md" />
                             <h2 className="text-base font-bold text-stone-900 dark:text-white mt-3 mb-2 leading-snug group-hover:text-amber-600 transition-colors">
                                 {article.title}
                             </h2>
                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-3 line-clamp-3">{article.excerpt}</p>
-                            <div className="flex items-center gap-3 text-xs text-gray-400 border-t border-gray-100 dark:border-stone-800 pt-3">
-                                <span>{article.author}</span><span>·</span><span>{article.date}</span>
-                            </div>
+                            <AuthorDateRow author={article.author} date={formatDate(article.date, lang)} />
                         </motion.div>
                     ))}
                 </StaggerGrid>

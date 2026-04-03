@@ -1,5 +1,5 @@
+// src/components/CategoryIcons.jsx
 // Animated SVG Icons — petroleum theme
-// Each icon has a looping CSS animation
 
 export function OilPumpIcon({ size = 32, className = "" }) {
     return (
@@ -18,25 +18,18 @@ export function OilPumpIcon({ size = 32, className = "" }) {
         .pump-beam { animation: pump 2s ease-in-out infinite; }
         .pump-arm  { animation: pumpArm 2s ease-in-out infinite; }
       `}</style>
-            {/* Base */}
             <rect x="8" y="54" width="12" height="6" rx="1" fill="#444" stroke="#111" strokeWidth="1.5"/>
             <rect x="44" y="54" width="12" height="6" rx="1" fill="#444" stroke="#111" strokeWidth="1.5"/>
-            {/* Legs */}
             <line x1="14" y1="54" x2="28" y2="36" stroke="#555" strokeWidth="3" strokeLinecap="round"/>
             <line x1="50" y1="54" x2="36" y2="36" stroke="#555" strokeWidth="3" strokeLinecap="round"/>
             <line x1="14" y1="54" x2="36" y2="36" stroke="#555" strokeWidth="2" strokeLinecap="round"/>
             <line x1="50" y1="54" x2="28" y2="36" stroke="#555" strokeWidth="2" strokeLinecap="round"/>
-            {/* Pivot */}
             <circle cx="32" cy="34" r="3" fill="#333" stroke="#111" strokeWidth="1.5"/>
-            {/* Beam */}
             <g className="pump-beam">
                 <rect x="10" y="26" width="44" height="8" rx="3" fill="#F59E0B" stroke="#111" strokeWidth="2"/>
-                {/* Counterweight */}
                 <rect x="42" y="22" width="14" height="12" rx="2" fill="#666" stroke="#111" strokeWidth="1.5"/>
-                {/* Head */}
                 <rect x="8" y="24" width="10" height="12" rx="2" fill="#888" stroke="#111" strokeWidth="1.5"/>
             </g>
-            {/* Rod */}
             <g className="pump-arm">
                 <line x1="12" y1="36" x2="12" y2="54" stroke="#444" strokeWidth="3" strokeLinecap="round"/>
             </g>
@@ -150,10 +143,8 @@ export function ChartIcon({ size = 32, className = "" }) {
         .bar2 { animation: bar2 2s ease-in-out infinite 0.3s; }
         .bar3 { animation: bar3 2s ease-in-out infinite 0.6s; }
       `}</style>
-            {/* Axes */}
             <line x1="12" y1="52" x2="52" y2="52" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
             <line x1="12" y1="10" x2="12" y2="52" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
-            {/* Bars */}
             <g className="bar1">
                 <rect x="16" y="28" width="10" height="24" rx="1.5" fill="#F59E0B" stroke="#111" strokeWidth="1.5"/>
             </g>
@@ -221,12 +212,9 @@ export function GasIcon({ size = 32, className = "" }) {
         .b2 { animation: bubble2 2s ease-in infinite 0.5s; }
         .b3 { animation: bubble3 2s ease-in infinite 1s; }
       `}</style>
-            {/* Tank */}
             <rect x="14" y="28" width="36" height="28" rx="4" fill="#555" stroke="#111" strokeWidth="2.5"/>
             <rect x="14" y="28" width="36" height="12" rx="4" fill="#F59E0B" stroke="#111" strokeWidth="2.5"/>
-            {/* Pipe top */}
             <rect x="28" y="12" width="8" height="18" rx="2" fill="#444" stroke="#111" strokeWidth="2"/>
-            {/* Bubbles */}
             <circle className="b1" cx="26" cy="20" r="3" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
             <circle className="b2" cx="32" cy="16" r="2" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
             <circle className="b3" cx="38" cy="20" r="2.5" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
@@ -258,16 +246,13 @@ export function OpecIcon({ size = 32, className = "" }) {
     )
 }
 
-// Map category name → icon component
+// Map category name → icon component (English names only)
 export const categoryIcons = {
-    "نفط خام": OilDropIcon,
-    "البترول": OilPumpIcon,
-    "غاز طبيعي": GasIcon,
-    "الغاز الطبيعي": GasIcon,
-    "طاقة متجددة": SolarIcon,
-    "الطاقة المتجددة": SolarIcon,
-    "أسواق": ChartIcon,
-    "الأسواق": ChartIcon,
-    "تقارير": DocumentIcon,
-    "أوبك+": OpecIcon,
+    "Petroleum": OilDropIcon,
+    "Crude Oil": OilPumpIcon,
+    "Natural Gas": GasIcon,
+    "Renewable Energy": SolarIcon,
+    "Markets": ChartIcon,
+    "Reports": DocumentIcon,
+    "OPEC+": OpecIcon,
 }

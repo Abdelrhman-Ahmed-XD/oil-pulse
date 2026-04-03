@@ -1,3 +1,4 @@
+import { useLanguage } from "../../components/LanguageContext"
 import { useEffect, useState } from "react"
 import { useNavigate, Routes, Route } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
@@ -15,6 +16,8 @@ import { useDarkMode } from "../../components/useDarkMode"
 export default function Dashboard() {
     const navigate = useNavigate()
     const [user, setUser] = useState(null)
+    const { t, lang } = useLanguage()
+    const isRtl = lang === "ar"
     const [mobileOpen, setMobileOpen] = useState(false)
     const { dark, toggle } = useDarkMode()
 
@@ -27,7 +30,7 @@ export default function Dashboard() {
     if (!user) return null
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-stone-950 flex" dir="rtl">
+        <div className="min-h-screen bg-gray-100 dark:bg-stone-950 flex" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* ── Desktop Sidebar — always visible, static in flow ── */}
             <div className="hidden lg:flex lg:w-64 lg:flex-col lg:shrink-0">
@@ -65,13 +68,13 @@ export default function Dashboard() {
                 {/* Mobile topbar */}
                 <div className="lg:hidden sticky top-0 z-30 bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 px-4 py-3 flex items-center justify-between shadow-sm">
                     <span className="text-base font-black text-stone-900 dark:text-white">
-                        نفط <span className="text-amber-500">وطاقة</span>
+                        {t("oil_and_energy_1")}<span className="text-amber-500">{t("oil_and_energy_2")}</span>
                     </span>
                     <div className="flex items-center gap-3">
                         {/* Dark mode toggle — mobile */}
                         <button
                             onClick={toggle}
-                            aria-label="تبديل الوضع"
+                            aria-label={t("dark_mode")}
                             style={{
                                 width: "40px", height: "22px", borderRadius: "11px",
                                 backgroundColor: dark ? "#F59E0B" : "#D1D5DB",

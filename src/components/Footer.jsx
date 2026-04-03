@@ -1,31 +1,55 @@
+// src/components/Footer.jsx
 import { motion } from "framer-motion"
 import { categoryIcons, OilDropIcon } from "./CategoryIcons"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useLanguage } from "./LanguageContext"
 
+// Default categories with bilingual names
 const defaultCategories = [
-    { id: 1, name: "البترول", subcategories: [] },
-    { id: 2, name: "الغاز الطبيعي", subcategories: [] },
-    { id: 3, name: "الطاقة المتجددة", subcategories: [] },
-    { id: 4, name: "الأسواق", subcategories: [] },
-    { id: 5, name: "تقارير", subcategories: [] },
+    { id: 1, nameEn: "Petroleum", nameAr: "البترول", subcategories: [] },
+    { id: 2, nameEn: "Natural Gas", nameAr: "الغاز الطبيعي", subcategories: [] },
+    { id: 3, nameEn: "Renewable Energy", nameAr: "الطاقة المتجددة", subcategories: [] },
+    { id: 4, nameEn: "OPEC+", nameAr: "أوبك+", subcategories: [] },
+    { id: 5, nameEn: "Markets", nameAr: "الأسواق", subcategories: [] },
+    { id: 6, nameEn: "Reports", nameAr: "تقارير", subcategories: [] },
 ]
 
-function toSlug(name) {
+// Generate slug from English name
+function toSlug(nameEn) {
+    if (!nameEn) return ""
     const map = {
-        "البترول": "oil", "نفط خام": "oil",
-        "الغاز الطبيعي": "gas", "غاز طبيعي": "gas",
-        "الطاقة المتجددة": "renewable", "طاقة متجددة": "renewable",
-        "الأسواق": "markets", "أسواق": "markets",
-        "تقارير": "reports", "أوبك+": "opec",
+        "Petroleum": "oil",
+        "Crude Oil": "oil",
+        "Natural Gas": "gas",
+        "Renewable Energy": "renewable",
+        "Markets": "markets",
+        "Reports": "reports",
+        "OPEC+": "opec",
     }
-    return map[name] || name.replace(/\s+/g, "-").toLowerCase()
+    return map[nameEn] || nameEn.replace(/\s+/g, "-").toLowerCase()
 }
 
 function getFooterCategories() {
     const stored = localStorage.getItem("oilpulse_categories_v2")
-    if (stored) return JSON.parse(stored)
+    if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed.length > 0) return parsed
+    }
     return defaultCategories
+}
+
+// Helper to get icon for a category (based on English name)
+function getCategoryIconByName(categoryNameEn) {
+    const iconMap = {
+        "Petroleum": categoryIcons["Petroleum"],
+        "Crude Oil": categoryIcons["Crude Oil"],
+        "Natural Gas": categoryIcons["Natural Gas"],
+        "Renewable Energy": categoryIcons["Renewable Energy"],
+        "Markets": categoryIcons["Markets"],
+        "Reports": categoryIcons["Reports"],
+        "OPEC+": categoryIcons["OPEC+"],
+    }
+    return iconMap[categoryNameEn] || OilDropIcon
 }
 
 export default function Footer() {
@@ -37,15 +61,15 @@ export default function Footer() {
     return (
         <footer className="bg-stone-900 text-white mt-20" dir={isRtl ? "rtl" : "ltr"}>
 
-            {/* ── Top amber accent line ── */}
+            {/* Top amber accent line */}
             <div className="h-1 bg-gradient-to-l from-amber-600 via-amber-400 to-amber-600"></div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-16">
 
-                    {/* ── Logo & About ── */}
+                    {/* Logo & About */}
                     <div>
-                        <Link to="/" className="flex items-center gap-3 mb-5 group icon-wrap w-fit">
+                        <div onClick={() => navigate("/")} className="flex items-center gap-3 mb-5 group icon-wrap w-fit cursor-pointer">
                             <motion.div whileHover={{ scale: 1.1, rotate: -5 }} transition={{ type: "spring", stiffness: 400 }}>
                                 <OilDropIcon size={44} />
                             </motion.div>
@@ -55,66 +79,67 @@ export default function Footer() {
                                 </span>
                                 <p className="text-xs text-gray-500 tracking-widest mt-0.5">{t("oil_energy_sub")}</p>
                             </div>
-                        </Link>
-
+                        </div>
                         <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-sm">
                             {t("about_desc")}
                         </p>
-
                         <div className="flex gap-3">
-                            <Link to="/" className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10">
+                            <div onClick={() => navigate("/")} className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10 cursor-pointer">
                                 {t("home")}
-                            </Link>
-                            <Link to="/" className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10">
+                            </div>
+                            <div onClick={() => navigate("/")} className="text-xs text-gray-500 hover:text-amber-400 border border-stone-700 hover:border-amber-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-amber-500/10 cursor-pointer">
                                 {t("latest_news")}
-                            </Link>
+                            </div>
                         </div>
                     </div>
 
-                    {/* ── Categories ── */}
+                    {/* Categories */}
                     <div>
                         <h4 className="text-xs font-black tracking-widest text-amber-400 mb-5 uppercase flex items-center gap-2">
                             <span className="w-4 h-0.5 bg-amber-400 rounded-full"></span>
                             {t("categories")}
                         </h4>
-
                         <ul className="space-y-1">
                             {categories.map((cat) => {
-                                const Icon = categoryIcons[cat.name]
-                                const catSlug = toSlug(cat.name)
+                                const displayName = lang === "ar" ? cat.nameAr : cat.nameEn
+                                const Icon = getCategoryIconByName(cat.nameEn)
+                                const catSlug = toSlug(cat.nameEn)
                                 return (
                                     <li key={cat.id}>
-                                        {/* ── FIX: single <div> instead of <Link> wrapping other <Link>s ── */}
                                         <div
                                             onClick={() => navigate(`/category/${catSlug}`)}
                                             className="flex items-center gap-3 group py-2 px-3 rounded-lg hover:bg-stone-800 transition-all duration-200 cursor-pointer"
                                         >
                                             {Icon && (
-                                                <motion.div className="w-7 h-7 shrink-0 icon-wrap"
+                                                <motion.div className="w-7 h-7 shrink-0"
                                                             whileHover={{ scale: 1.2, rotate: 10 }}
-                                                            transition={{ type: "spring", stiffness: 400 }}>
+                                                            transition={{ type: "spring", stiffness: 400 }}
+                                                >
                                                     <Icon size={26} />
                                                 </motion.div>
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <span className="text-sm text-gray-400 group-hover:text-amber-400 transition-colors duration-200 font-semibold">
-                                                    {t(cat.name)}
+                                                    {displayName}
                                                 </span>
                                                 {cat.subcategories?.length > 0 && (
                                                     <div className="flex flex-wrap gap-x-3 mt-0.5">
-                                                        {cat.subcategories.map((sub) => (
-                                                            // ── FIX: button instead of <Link> to avoid a-in-a ──
-                                                            <button
-                                                                key={sub}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    navigate(`/category/${sub.replace(/\s+/g, "-").toLowerCase()}`)
-                                                                }}
-                                                                className="text-xs text-gray-600 hover:text-amber-400 transition-colors"
-                                                            >
-                                                                · {t(sub)}
-                                                            </button>
-                                                        ))}
+                                                        {cat.subcategories.map((sub) => {
+                                                            const subDisplayName = lang === "ar" ? sub.nameAr : sub.nameEn
+                                                            const subSlug = sub.nameEn.replace(/\s+/g, "-").toLowerCase()
+                                                            return (
+                                                                <button
+                                                                    key={sub.nameEn}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        navigate(`/category/${subSlug}`)
+                                                                    }}
+                                                                    className="text-xs text-gray-600 hover:text-amber-400 transition-colors"
+                                                                >
+                                                                    · {subDisplayName}
+                                                                </button>
+                                                            )
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
@@ -127,14 +152,12 @@ export default function Footer() {
                             })}
                         </ul>
                     </div>
-
                 </div>
             </div>
 
-            {/* ── Bottom Bar ── */}
+            {/* Bottom Bar */}
             <div className="border-t border-stone-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-
                     <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
                         <p className="text-xs text-gray-500 text-center sm:text-right">
                             {t("all_rights")}
@@ -153,21 +176,18 @@ export default function Footer() {
                             <span className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-400">↗</span>
                         </a>
                     </div>
-
                     <div className="flex items-center gap-4 sm:gap-6">
-                        <Link to="/privacy" className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group">
+                        <div onClick={() => navigate("/privacy")} className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group cursor-pointer">
                             {t("privacy_policy")}
                             <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-amber-400 group-hover:w-full transition-all duration-300"></span>
-                        </Link>
+                        </div>
                         <a href="#" className="text-xs text-gray-500 hover:text-amber-400 transition-colors duration-200 relative group">
                             {t("contact_us")}
                             <span className="absolute -bottom-0.5 right-0 w-0 h-px bg-amber-400 group-hover:w-full transition-all duration-300"></span>
                         </a>
                     </div>
-
                 </div>
             </div>
-
         </footer>
     )
 }
