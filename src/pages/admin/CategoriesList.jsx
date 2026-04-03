@@ -100,42 +100,10 @@ export default function CategoriesList() {
         ), t("subcat_deleted"))
     }
 
-    const reorderSubcategories = (catId, fromIndex, toIndex) => {
-        const category = categories.find(c => c.id === catId)
-        if (!category) return
-        const reordered = [...category.subcategories]
-        const [removed] = reordered.splice(fromIndex, 1)
-        reordered.splice(toIndex, 0, removed)
-        save(categories.map(c => c.id === catId ? { ...c, subcategories: reordered } : c), t("subcat_reordered"))
+    // Subcategory reordering using local state and save on change
+    const reorderSubcategories = (catId, newSubOrder) => {
+        save(categories.map(c => c.id === catId ? { ...c, subcategories: newSubOrder } : c), t("subcat_reordered"))
     }
-
-    const handleSubDragStart = (e, catId, fromIndex) => {
-        e.dataTransfer.setData("text/plain", JSON.stringify({ catId, fromIndex }))
-        e.dataTransfer.effectAllowed = "move"
-    }
-
-    const handleSubDragOver = (e, catId, toIndex) => {
-        e.preventDefault()
-        e.dataTransfer.dropEffect = "move"
-        const dragData = JSON.parse(e.dataTransfer.getData("text/plain"))
-        if (dragData && dragData.catId === catId && dragData.fromIndex !== toIndex) {
-            reorderSubcategories(catId, dragData.fromIndex, toIndex)
-            e.dataTransfer.setData("text/plain", JSON.stringify({ catId, fromIndex: toIndex }))
-        }
-    }
-
-    const [dragIdx, setDragIdx] = useState(null)
-    const handleCatDragStart = (i) => setDragIdx(i)
-    const handleCatDragOver = (e, i) => {
-        e.preventDefault()
-        if (dragIdx === null || dragIdx === i) return
-        const updated = [...categories]
-        const [moved] = updated.splice(dragIdx, 1)
-        updated.splice(i, 0, moved)
-        setDragIdx(i)
-        save(updated, t("categories_reordered"))
-    }
-    const handleCatDragEnd = () => setDragIdx(null)
 
     const inputCls = "w-full border border-gray-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-stone-500 px-4 py-2.5 text-sm outline-none focus:border-amber-400 rounded-lg"
 
@@ -202,7 +170,7 @@ export default function CategoriesList() {
                                 </div>
                             </div>
 
-                            {/* Subcategories */}
+                            {/* Subcategories with Reorder */}
                             <AnimatePresence>
                                 {expandedCat === cat.id && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
@@ -213,25 +181,26 @@ export default function CategoriesList() {
                                                 <span className="mr-2 text-amber-500 text-[10px]">({t("drag_to_reorder")})</span>
                                             </p>
 
-                                            <div className="space-y-2 mb-3">
-                                                {(cat.subcategories || []).length === 0 ? (
-                                                    <p className="text-xs text-gray-400 dark:text-stone-500 italic">{t("no_subcats_yet")}</p>
-                                                ) : (
-                                                    cat.subcategories.map((sub, subIdx) => (
-                                                        <div key={sub}
-                                                             draggable
-                                                             onDragStart={(e) => handleSubDragStart(e, cat.id, subIdx)}
-                                                             onDragOver={(e) => handleSubDragOver(e, cat.id, subIdx)}
-                                                             className="flex items-center gap-3 bg-gray-50 dark:bg-stone-700 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing">
-                                                            <span className="text-gray-400 dark:text-stone-500 text-xs select-none">⠿</span>
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-                                                            <span className="flex-1 text-sm text-stone-700 dark:text-stone-200">{t(sub)}</span>
-                                                            <button onClick={() => removeSubcategory(cat.id, sub)}
-                                                                    className="text-xs text-red-400 hover:text-red-600 hover:bg-red-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">✕</button>
-                                                        </div>
-                                                    ))
-                                                )}
-                                            </div>
+                                            {/* Use Reorder.Group for subcategories */}
+                                            <Reorder.Group axis="y" values={cat.subcategories} onReorder={(newOrder) => reorderSubcategories(cat.id, newOrder)}>
+                                                <div className="space-y-2 mb-3">
+                                                    {(cat.subcategories || []).length === 0 ? (
+                                                        <p className="text-xs text-gray-400 dark:text-stone-500 italic">{t("no_subcats_yet")}</p>
+                                                    ) : (
+                                                        cat.subcategories.map((sub) => (
+                                                            <Reorder.Item key={sub} value={sub}>
+                                                                <div className="flex items-center gap-3 bg-gray-50 dark:bg-stone-700 px-3 py-2 rounded-lg cursor-grab">
+                                                                    <span className="text-gray-400 dark:text-stone-500 text-xs select-none">⠿</span>
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                                                                    <span className="flex-1 text-sm text-stone-700 dark:text-stone-200">{t(sub)}</span>
+                                                                    <button onClick={() => removeSubcategory(cat.id, sub)}
+                                                                            className="text-xs text-red-400 hover:text-red-600 hover:bg-red-500 hover:text-white px-1.5 py-0.5 rounded transition-colors">✕</button>
+                                                                </div>
+                                                            </Reorder.Item>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </Reorder.Group>
 
                                             <div className="flex gap-2">
                                                 <input type="text"
