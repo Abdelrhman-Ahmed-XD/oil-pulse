@@ -41,7 +41,7 @@ export default function AdminBar({ user, onClose }) {
                     onClick={() => navigate("/admin/dashboard/new")}
                     className="flex items-center gap-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded-lg transition-colors"
                 >
-                    <span>+</span>
+                    <span>➕</span>
                     <span className="hidden sm:block">{t("new_article")}</span>
                 </button>
 

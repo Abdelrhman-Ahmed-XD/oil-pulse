@@ -293,7 +293,7 @@ const translations = {
     },
     en: {
         // Site / Header
-        urgent: "Breaking",
+
         oil_and_energy_1: "Oil & ",
         oil_and_energy_2: "Energy",
         oil_energy_sub: "NEWS PORTAL",
@@ -488,21 +488,7 @@ const translations = {
         reset: "Reset",
 
         // NewsbarPicker
-        newsbar_title: "Breaking News Ticker",
-        newsbar_desc: "Control the text that appears in the scrolling ticker at the top of the page.",
-        newsbar_preview: "Ticker Preview",
-        newsbar_empty_preview: "The ticker will appear here...",
-        add_from_articles: "Add from Articles",
-        choose_article: "Choose an article...",
-        add_custom_text: "Add Custom Text",
-        newsbar_custom_placeholder: "e.g. Brent crude rises to $85 per barrel...",
-        newsbar_no_items: "No items — add from articles or write custom text",
-        items_count: "item(s)",
-        custom_text: "Text",
-        article_label: "Article",
-        newsbar_admin_locked: "Admin has set the newsbar — overrides editor",
-        newsbar_editor_picked: "Editor has manually set the newsbar",
-        newsbar_auto: "No selection — showing latest 5 headlines automatically",
+
 
         // Category names (display)
         "Petroleum": "Petroleum",
@@ -516,6 +502,35 @@ const translations = {
         "subcategory": "Subcategory",
         "back_to": "Back to ",
         // Privacy Policy
+
+        // Missing keys filled in
+        menu: "Menu",
+        urgent: "Breaking",
+        analytics_sub_editor: "Overview of your published articles",
+        newsbar_title: "Breaking News Ticker",
+        newsbar_desc: "Control the text shown in the scrolling ticker at the top of the page.",
+        newsbar_preview: "Ticker Preview",
+        newsbar_empty_preview: "The ticker will appear here...",
+        add_from_articles: "Add from Articles",
+        choose_article: "Choose an article...",
+        add_custom_text: "Add Custom Text",
+        newsbar_custom_placeholder: "e.g. Brent crude rises to $85 per barrel...",
+        newsbar_no_items: "No items — add from articles or write custom text",
+        items_count: "item(s)",
+        custom_text: "Text",
+        article_label: "Article",
+        newsbar_admin_locked: "Admin has set the newsbar — overrides editor",
+        newsbar_editor_picked: "Editor has manually set the newsbar",
+        newsbar_auto: "No selection — showing latest 5 headlines automatically",
+        cat_name_required: "Please enter a category name",
+        cat_added: "Category added successfully",
+        cat_deleted: "Category deleted",
+        cat_updated: "Category updated",
+        subcat_added: "Subcategory added successfully",
+        subcat_deleted: "Subcategory deleted",
+        subcat_reordered: "Subcategories reordered",
+        categories_reordered: "Categories reordered",
+
         "privacy_intro_title": "Introduction",
         "privacy_intro_content": "Welcome to the Privacy Policy of \"Oil & Energy\" news portal, specialized in petroleum, gas, and renewable energy.\n\nThis policy informs you about how we collect, use, and protect your information while using our website. We take your privacy seriously and are committed to protecting it according to the highest standards.\n\nBy using this website, you agree to the terms and conditions outlined in this policy.",
 
@@ -565,14 +580,7 @@ const translations = {
         "forgot_success_title": "Sent successfully",
         "forgot_success_message": "If the account exists, you will receive recovery instructions",
         "back_to_login": "Back to Login",
-        "cat_name_required": "Please enter a category name",
-        "cat_added": "Category added successfully",
-        "cat_deleted": "Category deleted",
-        "cat_updated": "Category updated",
-        "subcat_added": "Subcategory added successfully",
-        "subcat_deleted": "Subcategory deleted",
-        "subcat_reordered": "Subcategories reordered",
-        "categories_reordered": "Categories reordered",
+
 
     }
 }
@@ -648,6 +656,49 @@ export function TranslationIndicator() {
     )
 }
 
+// ── Date & Number formatters ─────────────────────────────────────
+const AR_MONTHS = [
+    "يناير","فبراير","مارس","أبريل","مايو","يونيو",
+    "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"
+]
+
+function toEasternNumerals(str) {
+    return String(str).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d])
+}
+
+/**
+ * formatDate(dateInput, lang)
+ * AR: "٢٠ مارس ٢٠٢٦"  (Eastern numerals + Arabic month name)
+ * EN: "March 20, 2026"
+ */
+export function formatDate(dateInput, lang) {
+    if (!dateInput) return ""
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput
+    if (isNaN(date)) return String(dateInput)
+    const day   = date.getDate()
+    const month = date.getMonth()
+    const year  = date.getFullYear()
+    if (lang === "ar") {
+        return `${toEasternNumerals(day)} ${AR_MONTHS[month]} ${toEasternNumerals(year)}`
+    }
+    return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric" }).format(date)
+}
+
+/**
+ * formatNumber(value, lang)
+ * AR: Eastern Arabic numerals  e.g. ١٬٢٣٤
+ * EN: Western numerals          e.g. 1,234
+ */
+export function formatNumber(value, lang) {
+    if (value === null || value === undefined) return ""
+    const num = Number(value)
+    if (isNaN(num)) return String(value)
+    if (lang === "ar") {
+        return toEasternNumerals(num.toLocaleString("en-US"))
+    }
+    return num.toLocaleString("en-US")
+}
+
 // ── Provider ──────────────────────────────────────────────────
 export function LanguageProvider({children}) {
     const [lang, setLang] = useState(() => localStorage.getItem("oilpulse_lang") || "ar")
@@ -658,16 +709,26 @@ export function LanguageProvider({children}) {
         localStorage.setItem("oilpulse_lang", lang)
         document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"
         document.documentElement.lang = lang
-        setTranslatingCount(0);
+        setTranslatingCount(0)
         setTotalCount(0)
     }, [lang])
 
     const toggleLang = () => setLang((prev) => prev === "ar" ? "en" : "ar")
     const t = (key) => translations[lang]?.[key] ?? key
 
+    // Bound helpers — no need to pass lang manually in components
+    const fDate   = (d) => formatDate(d, lang)
+    const fNumber = (n) => formatNumber(n, lang)
+
     return (
         <LanguageContext.Provider
-            value={{lang, toggleLang, t, setTranslatingCount, setTotalCount, translatingCount, totalCount}}>
+            value={{
+                lang, toggleLang, t,
+                formatDate: fDate,
+                formatNumber: fNumber,
+                setTranslatingCount, setTotalCount,
+                translatingCount, totalCount
+            }}>
             {children}
             <TranslationIndicator/>
         </LanguageContext.Provider>

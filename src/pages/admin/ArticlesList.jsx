@@ -130,7 +130,7 @@ export default function ArticlesList({ user }) {
                 </div>
                 <button onClick={() => navigate("/admin/dashboard/new")}
                         className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-5 py-2.5 text-sm rounded-xl transition-colors flex items-center gap-2 self-start sm:self-auto">
-                    <span>+</span><span>{t("add_article")}</span>
+                    <span>➕</span><span>{t("add_article")}</span>
                 </button>
             </div>
 
