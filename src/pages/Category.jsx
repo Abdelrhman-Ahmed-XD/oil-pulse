@@ -3,37 +3,14 @@ import { motion } from "framer-motion"
 import { getArticles } from "../data/articles"
 import { getCategoryIcon } from "../utils/categoryIconUtils"
 import { useLanguage, useTranslatedArticles } from "../components/LanguageContext"
+import { getCategoryColor, getDisplayCategorySync, categoryToEnglish, toEnglishCategory } from "../utils/categoryUtils"
 
 const fadeUp = {
     hidden: { opacity: 0, y: 24 },
     visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.45, ease: "easeOut" } })
 }
 
-const categoryColors = {
-    "Petroleum": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
-    "Crude Oil": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
-    "Natural Gas": "bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300",
-    "Renewable Energy": "bg-green-100 text-green-700 dark:bg-green-400/20 dark:text-green-300",
-    "Markets": "bg-red-100 text-red-700 dark:bg-red-400/20 dark:text-red-300",
-    "Reports": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
-    "OPEC+": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
-}
-
-const categoryToEnglish = {
-    "الأسواق": "Markets",
-    "أسواق": "Markets",
-    "تقارير": "Reports",
-    "تقرير": "Reports",
-    "البترول": "Petroleum",
-    "نفط خام": "Crude Oil",
-    "الغاز الطبيعي": "Natural Gas",
-    "غاز طبيعي": "Natural Gas",
-    "الطاقة المتجددة": "Renewable Energy",
-    "طاقة متجددة": "Renewable Energy",
-    "أوبك+": "OPEC+",
-}
-
-const getEnglishCategoryName = (catName) => categoryToEnglish[catName] || catName
+const getEnglishCategoryName = (catName) => toEnglishCategory(catName)
 
 const slugToCategoryMap = {
     oil: { name: "Petroleum", matchNames: ["Petroleum", "Crude Oil", "البترول", "نفط خام"], iconKey: "Petroleum" },
@@ -87,15 +64,7 @@ function resolveCategoryFromSlug(slug) {
     return { name: slug, matchNames: [slug], isSubcategory: false, subcategories: [], iconKey: slug };
 }
 
-const getCategoryColor = (category) => {
-    const englishName = categoryToEnglish[category] || category;
-    return categoryColors[englishName] || "bg-gray-100 text-gray-700 dark:bg-stone-700 dark:text-stone-300";
-};
-
-const getDisplayCategory = (category, t) => {
-    const englishName = categoryToEnglish[category] || category;
-    return t(englishName);
-};
+const getDisplayCategory = (category, t) => getDisplayCategorySync(category, 'en', t)
 
 const CategoryBadge = ({ category, size = "md" }) => {
     const Icon = getCategoryIcon(category);
@@ -113,54 +82,12 @@ const CategoryBadge = ({ category, size = "md" }) => {
     );
 };
 
-// Robust date formatter
-const formatDate = (dateStr, lang) => {
-    if (!dateStr) return "";
-    if (lang === "ar") return dateStr; // Keep Arabic as stored
 
-    // For English: convert Arabic date to English
-    let clean = dateStr.replace(/,/g, "");
-
-    // Convert Arabic numerals to English
-    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    arabicNumbers.forEach((a, i) => {
-        clean = clean.replace(new RegExp(a, 'g'), englishNumbers[i]);
-    });
-
-    const monthMap = {
-        'يناير': 'January', 'فبراير': 'February', 'مارس': 'March',
-        'أبريل': 'April', 'مايو': 'May', 'يونيو': 'June',
-        'يوليو': 'July', 'أغسطس': 'August', 'سبتمبر': 'September',
-        'أكتوبر': 'October', 'نوفمبر': 'November', 'ديسمبر': 'December'
-    };
-
-    const parts = clean.split(' ');
-    if (parts.length < 2) return clean;
-
-    let month = null, day = null, year = null;
-    for (let i = 0; i < parts.length; i++) {
-        if (monthMap[parts[i]]) {
-            month = monthMap[parts[i]];
-        } else if (/^\d+$/.test(parts[i]) && parts[i].length <= 2) {
-            day = parts[i];
-        } else if (/^\d{4}$/.test(parts[i])) {
-            year = parts[i];
-        }
-    }
-    if (!day && parts[0] && /^\d+$/.test(parts[0])) day = parts[0];
-    if (!year && parts[parts.length-1] && /^\d{4}$/.test(parts[parts.length-1])) year = parts[parts.length-1];
-    if (!month && parts[1] && monthMap[parts[1]]) month = monthMap[parts[1]];
-
-    if (month && day && year) return `${month} ${day}, ${year}`;
-    if (month && day) return `${month} ${day}`;
-    return clean;
-};
 
 export default function Category() {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { lang, t } = useLanguage();
+    const { lang, t, formatDate } = useLanguage();
     const isRtl = lang === "ar";
 
     const rawArticles = getArticles();
@@ -194,7 +121,7 @@ export default function Category() {
             <div className="flex items-center gap-2 text-xs text-gray-400 border-t border-gray-100 dark:border-stone-800 pt-2 mt-2">
                 <span>✍ {article.author}</span>
                 <span>·</span>
-                <span>📅 {formatDate(article.date, lang)}</span>
+                <span>📅 {formatDate(article.date)}</span>
             </div>
         </motion.div>
     );

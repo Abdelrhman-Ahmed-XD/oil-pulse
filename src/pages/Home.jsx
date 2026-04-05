@@ -5,32 +5,7 @@ import { getArticles } from "../data/articles"
 import SmartImage from "../components/SmartImage"
 import { getCategoryIcon } from "../utils/categoryIconUtils"
 import { useLanguage, useTranslatedArticles } from "../components/LanguageContext"
-
-// Map Arabic category names to English for consistent translation
-const categoryToEnglish = {
-    "الأسواق": "Markets",
-    "أسواق": "Markets",
-    "تقارير": "Reports",
-    "تقرير": "Reports",
-    "البترول": "Petroleum",
-    "نفط خام": "Crude Oil",
-    "الغاز الطبيعي": "Natural Gas",
-    "غاز طبيعي": "Natural Gas",
-    "الطاقة المتجددة": "Renewable Energy",
-    "طاقة متجددة": "Renewable Energy",
-    "أوبك+": "OPEC+",
-}
-
-// Category colors for badges
-const categoryColors = {
-    "Petroleum": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
-    "Crude Oil": "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300",
-    "Natural Gas": "bg-blue-100 text-blue-700 dark:bg-blue-400/20 dark:text-blue-300",
-    "Renewable Energy": "bg-green-100 text-green-700 dark:bg-green-400/20 dark:text-green-300",
-    "Markets": "bg-red-100 text-red-700 dark:bg-red-400/20 dark:text-red-300",
-    "Reports": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
-    "OPEC+": "bg-purple-100 text-purple-700 dark:bg-purple-400/20 dark:text-purple-300",
-}
+import { getCategoryColor, getDisplayCategorySync } from "../utils/categoryUtils"
 
 const gridContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
 const cardVariant = {
@@ -79,48 +54,11 @@ function getSidebarArticles(allArticles, featuredId) {
     return nonFeatured.slice(0, 4)
 }
 
-const formatDate = (dateStr, lang) => {
-    if (!dateStr) return ""
 
-    if (lang === "en") {
-        if (dateStr.includes("January") || dateStr.includes("February") || dateStr.includes("March") ||
-            dateStr.includes("April") || dateStr.includes("May") || dateStr.includes("June") ||
-            dateStr.includes("July") || dateStr.includes("August") || dateStr.includes("September") ||
-            dateStr.includes("October") || dateStr.includes("November") || dateStr.includes("December")) {
-            return dateStr
-        }
-
-        const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
-        const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-
-        let converted = dateStr
-        arabicNumbers.forEach((a, i) => {
-            converted = converted.replace(new RegExp(a, 'g'), englishNumbers[i])
-        })
-
-        const monthMap = {
-            'يناير': 'January', 'فبراير': 'February', 'مارس': 'March',
-            'أبريل': 'April', 'مايو': 'May', 'يونيو': 'June',
-            'يوليو': 'July', 'أغسطس': 'August', 'سبتمبر': 'September',
-            'أكتوبر': 'October', 'نوفمبر': 'November', 'ديسمبر': 'December'
-        }
-
-        const parts = converted.split(' ')
-        if (parts.length === 3) {
-            const day = parts[0]
-            const arabicMonth = parts[1]
-            const year = parts[2]
-            const englishMonth = monthMap[arabicMonth] || arabicMonth
-            return `${englishMonth} ${day}, ${year}`
-        }
-        return converted
-    }
-    return dateStr
-}
 
 export default function Home() {
     const navigate = useNavigate()
-    const { lang, t } = useLanguage()
+    const { lang, t, formatDate } = useLanguage()
     const isRtl = lang === "ar"
 
     const rawArticles = getArticles()
@@ -139,18 +77,6 @@ export default function Home() {
         )
     }
 
-    // Get display category name (translated)
-    const getDisplayCategory = (category) => {
-        const englishName = categoryToEnglish[category] || category
-        return t(englishName)
-    }
-
-    // Get category color class
-    const getCategoryColor = (category) => {
-        const englishName = categoryToEnglish[category] || category
-        return categoryColors[englishName] || "bg-gray-100 text-gray-700"
-    }
-
     // Category Badge with Icon inside
     const CategoryBadge = ({ category, size = "md" }) => {
         const Icon = getCategoryIcon(category)
@@ -167,7 +93,7 @@ export default function Home() {
                 >
                     <Icon size={iconSize} />
                 </motion.div>
-                <span>{getDisplayCategory(category)}</span>
+                <span>{getDisplayCategorySync(category, lang, t)}</span>
             </div>
         )
     }
@@ -203,7 +129,7 @@ export default function Home() {
                             {featured.title}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 text-base leading-relaxed mb-4">{featured.excerpt}</p>
-                        <AuthorDateRow author={featured.author} date={formatDate(featured.date, lang)} />
+                        <AuthorDateRow author={featured.author} date={formatDate(featured.date)} />
                     </div>
                 </AnimatedCard>
 
@@ -229,7 +155,7 @@ export default function Home() {
                                                 {article.title}
                                             </h3>
                                         </div>
-                                        <AuthorDateRow author={article.author} date={formatDate(article.date, lang)} />
+                                        <AuthorDateRow author={article.author} date={formatDate(article.date)} />
                                     </div>
                                 </div>
                             </AnimatedCard>
@@ -264,7 +190,7 @@ export default function Home() {
                                 {article.title}
                             </h2>
                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed mb-3 line-clamp-3">{article.excerpt}</p>
-                            <AuthorDateRow author={article.author} date={formatDate(article.date, lang)} />
+                            <AuthorDateRow author={article.author} date={formatDate(article.date)} />
                         </motion.div>
                     ))}
                 </StaggerGrid>

@@ -1,7 +1,7 @@
 // src/components/LanguageContext.jsx
 import {createContext, useContext, useState, useEffect, useRef} from "react"
 import {motion, AnimatePresence} from "framer-motion"
-import {translateArticle} from "../utils/translationUtils"
+import {translateArticle, translateUIString} from "../utils/translationUtils"
 
 const LanguageContext = createContext()
 
@@ -293,7 +293,7 @@ const translations = {
     },
     en: {
         // Site / Header
-
+        urgent: "Breaking",
         oil_and_energy_1: "Oil & ",
         oil_and_energy_2: "Energy",
         oil_energy_sub: "NEWS PORTAL",
@@ -488,7 +488,21 @@ const translations = {
         reset: "Reset",
 
         // NewsbarPicker
-
+        newsbar_title: "Breaking News Ticker",
+        newsbar_desc: "Control the text that appears in the scrolling ticker at the top of the page.",
+        newsbar_preview: "Ticker Preview",
+        newsbar_empty_preview: "The ticker will appear here...",
+        add_from_articles: "Add from Articles",
+        choose_article: "Choose an article...",
+        add_custom_text: "Add Custom Text",
+        newsbar_custom_placeholder: "e.g. Brent crude rises to $85 per barrel...",
+        newsbar_no_items: "No items — add from articles or write custom text",
+        items_count: "item(s)",
+        custom_text: "Text",
+        article_label: "Article",
+        newsbar_admin_locked: "Admin has set the newsbar — overrides editor",
+        newsbar_editor_picked: "Editor has manually set the newsbar",
+        newsbar_auto: "No selection — showing latest 5 headlines automatically",
 
         // Category names (display)
         "Petroleum": "Petroleum",
@@ -505,31 +519,6 @@ const translations = {
 
         // Missing keys filled in
         menu: "Menu",
-        urgent: "Breaking",
-        analytics_sub_editor: "Overview of your published articles",
-        newsbar_title: "Breaking News Ticker",
-        newsbar_desc: "Control the text shown in the scrolling ticker at the top of the page.",
-        newsbar_preview: "Ticker Preview",
-        newsbar_empty_preview: "The ticker will appear here...",
-        add_from_articles: "Add from Articles",
-        choose_article: "Choose an article...",
-        add_custom_text: "Add Custom Text",
-        newsbar_custom_placeholder: "e.g. Brent crude rises to $85 per barrel...",
-        newsbar_no_items: "No items — add from articles or write custom text",
-        items_count: "item(s)",
-        custom_text: "Text",
-        article_label: "Article",
-        newsbar_admin_locked: "Admin has set the newsbar — overrides editor",
-        newsbar_editor_picked: "Editor has manually set the newsbar",
-        newsbar_auto: "No selection — showing latest 5 headlines automatically",
-        cat_name_required: "Please enter a category name",
-        cat_added: "Category added successfully",
-        cat_deleted: "Category deleted",
-        cat_updated: "Category updated",
-        subcat_added: "Subcategory added successfully",
-        subcat_deleted: "Subcategory deleted",
-        subcat_reordered: "Subcategories reordered",
-        categories_reordered: "Categories reordered",
 
         "privacy_intro_title": "Introduction",
         "privacy_intro_content": "Welcome to the Privacy Policy of \"Oil & Energy\" news portal, specialized in petroleum, gas, and renewable energy.\n\nThis policy informs you about how we collect, use, and protect your information while using our website. We take your privacy seriously and are committed to protecting it according to the highest standards.\n\nBy using this website, you agree to the terms and conditions outlined in this policy.",
@@ -580,9 +569,33 @@ const translations = {
         "forgot_success_title": "Sent successfully",
         "forgot_success_message": "If the account exists, you will receive recovery instructions",
         "back_to_login": "Back to Login",
-
+        "cat_name_required": "Please enter a category name",
+        "cat_added": "Category added successfully",
+        "cat_deleted": "Category deleted",
+        "cat_updated": "Category updated",
+        "subcat_added": "Subcategory added successfully",
+        "subcat_deleted": "Subcategory deleted",
+        "subcat_reordered": "Subcategories reordered",
+        "categories_reordered": "Categories reordered",
 
     }
+}
+
+
+// ── Hook: translate a single dynamic string (e.g. admin category name) ──
+// Returns the original string immediately, replaces with translation async.
+export function useDynamicTranslation(text) {
+    const { lang } = useLanguage()
+    const [result, setResult] = useState(text)
+
+    useEffect(() => {
+        setResult(text) // reset immediately on text or lang change
+        if (lang === "en" && text) {
+            translateUIString(text, "en").then(setResult).catch(() => setResult(text))
+        }
+    }, [text, lang])
+
+    return result
 }
 
 // ── Non-blocking hook — shows Arabic instantly, updates in parallel ─
@@ -666,22 +679,52 @@ function toEasternNumerals(str) {
     return String(str).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[d])
 }
 
+// Arabic month name → index for parsing stored Arabic date strings
+const AR_MONTH_INDEX = {
+    "يناير":0,"فبراير":1,"مارس":2,"أبريل":3,"مايو":4,"يونيو":5,
+    "يوليو":6,"أغسطس":7,"سبتمبر":8,"أكتوبر":9,"نوفمبر":10,"ديسمبر":11
+}
+const EN_MONTHS = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+]
+function fromEasternNumerals(str) {
+    return String(str).replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+}
+
 /**
  * formatDate(dateInput, lang)
- * AR: "٢٠ مارس ٢٠٢٦"  (Eastern numerals + Arabic month name)
- * EN: "March 20, 2026"
+ * Handles Arabic strings "٢٠ مارس ٢٠٢٦", ISO strings, and Date objects.
+ * AR output: "٢٠ مارس ٢٠٢٦"
+ * EN output: "March 20, 2026"
  */
 export function formatDate(dateInput, lang) {
     if (!dateInput) return ""
-    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput
-    if (isNaN(date)) return String(dateInput)
-    const day   = date.getDate()
-    const month = date.getMonth()
-    const year  = date.getFullYear()
-    if (lang === "ar") {
-        return `${toEasternNumerals(day)} ${AR_MONTHS[month]} ${toEasternNumerals(year)}`
+    let day, monthIdx, year
+
+    if (typeof dateInput === "string") {
+        const parts = dateInput.trim().split(/\s+/)
+        if (parts.length === 3 && AR_MONTH_INDEX[parts[1]] !== undefined) {
+            // Arabic stored string: "٢٠ مارس ٢٠٢٦"
+            day      = parseInt(fromEasternNumerals(parts[0]), 10)
+            monthIdx = AR_MONTH_INDEX[parts[1]]
+            year     = parseInt(fromEasternNumerals(parts[2]), 10)
+        } else {
+            const d = new Date(dateInput)
+            if (isNaN(d)) return dateInput
+            day = d.getDate(); monthIdx = d.getMonth(); year = d.getFullYear()
+        }
+    } else if (dateInput instanceof Date) {
+        if (isNaN(dateInput)) return ""
+        day = dateInput.getDate(); monthIdx = dateInput.getMonth(); year = dateInput.getFullYear()
+    } else {
+        return String(dateInput)
     }
-    return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric" }).format(date)
+
+    if (lang === "ar") {
+        return `${toEasternNumerals(day)} ${AR_MONTHS[monthIdx]} ${toEasternNumerals(year)}`
+    }
+    return `${EN_MONTHS[monthIdx]} ${day}, ${year}`
 }
 
 /**

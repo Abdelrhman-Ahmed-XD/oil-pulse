@@ -5,104 +5,7 @@ import { getArticles } from "../data/articles"
 import { convertMediaUrl } from "../utils/mediaUtils"
 import SmartImage from "../components/SmartImage"
 import { useLanguage, useTranslatedArticles } from "../components/LanguageContext"
-
-const categoryColors = {
-    "نفط خام": "bg-amber-100 text-amber-700", "البترول": "bg-amber-100 text-amber-700", "Petroleum": "bg-amber-100 text-amber-700", "Crude Oil": "bg-amber-100 text-amber-700",
-    "طاقة متجددة": "bg-green-100 text-green-700", "الطاقة المتجددة": "bg-green-100 text-green-700", "Renewable Energy": "bg-green-100 text-green-700",
-    "غاز طبيعي": "bg-blue-100 text-blue-700", "الغاز الطبيعي": "bg-blue-100 text-blue-700", "Natural Gas": "bg-blue-100 text-blue-700",
-    "أسواق": "bg-red-100 text-red-700", "الأسواق": "bg-red-100 text-red-700", "Markets": "bg-red-100 text-red-700",
-    "تقارير": "bg-purple-100 text-purple-700", "Reports": "bg-purple-100 text-purple-700", "أوبك+": "bg-purple-100 text-purple-700", "OPEC+": "bg-purple-100 text-purple-700",
-}
-
-const categoryToEnglish = {
-    "الأسواق": "Markets",
-    "أسواق": "Markets",
-    "تقارير": "Reports",
-    "تقرير": "Reports",
-    "البترول": "Petroleum",
-    "نفط خام": "Crude Oil",
-    "الغاز الطبيعي": "Natural Gas",
-    "غاز طبيعي": "Natural Gas",
-    "الطاقة المتجددة": "Renewable Energy",
-    "طاقة متجددة": "Renewable Energy",
-    "أوبك+": "OPEC+",
-}
-
-const formatDate = (dateStr, lang) => {
-    if (!dateStr) return "";
-
-    // Helper to convert Arabic numerals to English
-    const arabicToEnglishNum = (str) => {
-        const map = { '٠':'0', '١':'1', '٢':'2', '٣':'3', '٤':'4', '٥':'5', '٦':'6', '٧':'7', '٨':'8', '٩':'9' };
-        return str.replace(/[٠-٩]/g, m => map[m]);
-    };
-
-    // Helper to convert English numerals to Arabic
-    const englishToArabicNum = (str) => {
-        const map = { '0':'٠', '1':'١', '2':'٢', '3':'٣', '4':'٤', '5':'٥', '6':'٦', '7':'٧', '8':'٨', '9':'٩' };
-        return str.replace(/[0-9]/g, m => map[m]);
-    };
-
-    // Month name mappings
-    const arabicMonths = {
-        'January':'يناير', 'February':'فبراير', 'March':'مارس', 'April':'أبريل',
-        'May':'مايو', 'June':'يونيو', 'July':'يوليو', 'August':'أغسطس',
-        'September':'سبتمبر', 'October':'أكتوبر', 'November':'نوفمبر', 'December':'ديسمبر'
-    };
-    const englishMonths = {
-        'يناير':'January', 'فبراير':'February', 'مارس':'March', 'أبريل':'April',
-        'مايو':'May', 'يونيو':'June', 'يوليو':'July', 'أغسطس':'August',
-        'سبتمبر':'September', 'أكتوبر':'October', 'نوفمبر':'November', 'ديسمبر':'December'
-    };
-
-    // Try to detect if the date is in Arabic or English format
-    const hasArabicChars = /[\u0600-\u06FF]/.test(dateStr);
-    const hasEnglishMonth = /January|February|March|April|May|June|July|August|September|October|November|December/i.test(dateStr);
-
-    // If target language matches current format, return as is (maybe just normalize numerals)
-    if ((lang === "ar" && hasArabicChars) || (lang === "en" && !hasArabicChars && hasEnglishMonth)) {
-        // Just ensure numerals are correct for the language
-        if (lang === "ar") {
-            return englishToArabicNum(dateStr);
-        } else {
-            return arabicToEnglishNum(dateStr);
-        }
-    }
-
-    // Parse the date to extract day, month, year
-    let day = "", month = "", year = "";
-    let clean = dateStr.replace(/,/g, "");
-
-    // Convert numerals to English for parsing
-    clean = arabicToEnglishNum(clean);
-
-    const parts = clean.split(' ');
-    for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (englishMonths[part]) {
-            month = englishMonths[part];
-        } else if (/^\d+$/.test(part) && part.length <= 2) {
-            day = part;
-        } else if (/^\d{4}$/.test(part)) {
-            year = part;
-        }
-    }
-    if (!day && parts[0] && /^\d+$/.test(parts[0])) day = parts[0];
-    if (!year && parts[parts.length-1] && /^\d{4}$/.test(parts[parts.length-1])) year = parts[parts.length-1];
-    if (!month && parts[1] && englishMonths[parts[1]]) month = englishMonths[parts[1]];
-
-    if (!day || !month) return dateStr; // fallback
-
-    // Format according to target language
-    if (lang === "ar") {
-        const arabicMonth = arabicMonths[month] || month;
-        const arabicDay = englishToArabicNum(day);
-        const arabicYear = englishToArabicNum(year);
-        return `${arabicDay} ${arabicMonth} ${arabicYear}`;
-    } else {
-        return `${month} ${day}, ${year}`;
-    }
-};
+import { getCategoryColor, getDisplayCategorySync, toEnglishCategory } from "../utils/categoryUtils"
 
 function trackView(id) {
     const sessionKey = `oilpulse_viewed_${id}`
@@ -178,7 +81,7 @@ function RenderBlock({ block }) {
 }
 
 function CommentsSection({ articleId }) {
-    const { lang, t } = useLanguage()
+    const { lang, t, formatDate } = useLanguage()
     const storageKey = `oilpulse_comments_${articleId}`
     const [comments, setComments] = useState(() => JSON.parse(localStorage.getItem(storageKey) || "[]"))
     const [form, setForm] = useState({ name: "", email: "", body: "" })
@@ -270,7 +173,7 @@ export default function Article() {
     const { id } = useParams()
     const navigate = useNavigate()
     const location = useLocation()
-    const { lang, t } = useLanguage()
+    const { lang, t, formatDate } = useLanguage()
     const isRtl = lang === "ar"
 
     const rawArticles = getArticles()
@@ -294,56 +197,29 @@ export default function Article() {
         )
     }
 
-    // Determine the correct back destination and button text
     const getBackTarget = () => {
-        // Helper to get English name from stored category (may be Arabic)
-        const getEnglishName = (catName) => {
-            const map = {
-                "البترول": "Petroleum",
-                "نفط خام": "Crude Oil",
-                "الغاز الطبيعي": "Natural Gas",
-                "غاز طبيعي": "Natural Gas",
-                "الطاقة المتجددة": "Renewable Energy",
-                "طاقة متجددة": "Renewable Energy",
-                "الأسواق": "Markets",
-                "أسواق": "Markets",
-                "تقارير": "Reports",
-                "تقرير": "Reports",
-                "أوبك+": "OPEC+",
-            };
-            return map[catName] || catName;
-        };
-
-        if (article.subcategory && article.subcategory.trim() !== "") {
-            const subSlug = article.subcategory.replace(/\s+/g, "-").toLowerCase();
-            // Use English version of subcategory name if needed
-            const engSubName = getEnglishName(article.subcategory);
-            return { path: `/category/${subSlug}`, name: engSubName };
-        }
-
         const categorySlugMap = {
-            "Petroleum": "oil",
-            "Crude Oil": "oil",
-            "Natural Gas": "gas",
-            "Renewable Energy": "renewable",
-            "Markets": "markets",
-            "Reports": "reports",
-            "OPEC+": "opec",
-        };
-        const englishCatName = getEnglishName(article.category);
-        const slug = categorySlugMap[englishCatName] || englishCatName.replace(/\s+/g, "-").toLowerCase();
-        return { path: `/category/${slug}`, name: englishCatName };
+            "Petroleum": "oil", "Crude Oil": "oil",
+            "Natural Gas": "gas", "Renewable Energy": "renewable",
+            "Markets": "markets", "Reports": "reports", "OPEC+": "opec",
+        }
+        if (article.subcategory && article.subcategory.trim() !== "") {
+            const subSlug = article.subcategory.replace(/\s+/g, "-").toLowerCase()
+            const engSubName = toEnglishCategory(article.subcategory)
+            return { path: `/category/${subSlug}`, name: engSubName }
+        }
+        const englishCatName = toEnglishCategory(article.category)
+        const slug = categorySlugMap[englishCatName] || englishCatName.replace(/\s+/g, "-").toLowerCase()
+        return { path: `/category/${slug}`, name: englishCatName }
     }
 
     const { path: backPath, name: backName } = getBackTarget()
-
     const related = allArticles.filter((a) => a.category === article.category && a.id !== article.id).slice(0, 3)
     const blocks = article.blocks || []
     const hasOldBody = article.body && blocks.length === 0
 
     return (
         <main className="max-w-4xl mx-auto px-4 py-10" dir={isRtl ? "rtl" : "ltr"}>
-            {/* Back button – uses navigate(-1) to go back to previous page, with fallback to backPath */}
             <button
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-sm text-amber-600 font-bold mb-8 hover:text-amber-500 transition-colors"
@@ -353,14 +229,14 @@ export default function Article() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${categoryColors[article.category] || "bg-gray-100 text-gray-700"}`}>
-                        {t(categoryToEnglish[article.category] || article.category)}
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${getCategoryColor(article.category)}`}>
+                        {getDisplayCategorySync(article.category, lang, t)}
                     </span>
                     {article.subcategory && (
                         <>
                             <span className="text-gray-400 text-xs font-bold">{isRtl ? "←" : "→"}</span>
                             <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 dark:bg-stone-700 text-gray-600 dark:text-gray-300">
-                                {t(categoryToEnglish[article.subcategory] || article.subcategory)}
+                                {getDisplayCategorySync(article.subcategory, lang, t)}
                             </span>
                         </>
                     )}
@@ -372,7 +248,7 @@ export default function Article() {
                 <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-8 border-b border-gray-200 dark:border-stone-800">
                     <span>✍ {article.author}</span>
                     <span>·</span>
-                    <span>📅 {formatDate(article.date, lang)}</span>
+                    <span>📅 {formatDate(article.date)}</span>
                 </div>
             </motion.div>
 
